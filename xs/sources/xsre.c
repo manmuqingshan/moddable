@@ -227,6 +227,13 @@ const txCharCase gxCharCaseToUpper1[mxCharCaseToUpper1Count] ICACHE_XS6RO_ATTR =
 
 typedef struct sxPatternParser txPatternParser;
 
+typedef struct sxCaptureName txCaptureName;
+struct sxCaptureName {
+	txCaptureName* nextCaptureName;
+	txInteger index;
+	char string[1];
+};
+
 typedef void (*txTermMeasure)(txPatternParser*, void*, txInteger);
 typedef void (*txTermCode)(txPatternParser*, void*, txInteger, txInteger);
 
@@ -250,14 +257,6 @@ typedef struct {
 	txInteger assertionIndex;
 	txInteger completion;
 } txAssertion;
-
-typedef struct sxCaptureName txCaptureName;
-struct sxCaptureName {
-	void* next;
-	txCaptureName* nextCaptureName;
-	txInteger index;
-	char string[1];
-};
 
 typedef struct sxCapture txCapture;
 struct sxCapture {
@@ -334,9 +333,10 @@ struct sxPatternParser {
 		
 	txInteger assertionIndex;
 	txInteger captureIndex;
-	txInteger quantifierIndex;
 	txInteger nameIndex;
-	txCaptureName* firstName;
+	txInteger quantifierIndex;
+	
+	txCaptureName* firstCaptureName;
 	txCapture* firstNamedCapture;
 	txCapture* lastNamedCapture;
 	
@@ -368,12 +368,18 @@ static void* fxCharSetStringsDisjunction(txPatternParser* parser, txCharSet* set
 static void* fxCharSetStringsSequence(txPatternParser* parser, txString string);
 static void* fxCharSetUnicodeProperty(txPatternParser* parser);
 static void* fxCharSetWords(txPatternParser* parser);
+
+static void fxCaptureNameEscape(txPatternParser* parser);
+static txCaptureName* fxCaptureNameGet(txPatternParser* parser, txString string);
+static void fxCaptureNameParse(txPatternParser* parser, txInteger* length);
+static void fxCaptureNameParticipate(txPatternParser* parser, txCapture* capture);
+static txCaptureName* fxCaptureNamePut(txPatternParser* parser, txString string);
+
 static void* fxDisjunctionParse(txPatternParser* parser, txInteger character);
 static void* fxQuantifierParse(txPatternParser* parser, void* term, txInteger captureIndex);
 static txBoolean fxQuantifierParseBrace(txPatternParser* parser, txInteger* min, txInteger* max);
 static txBoolean fxQuantifierParseDigits(txPatternParser* parser, txInteger* result);
 static void* fxSequenceParse(txPatternParser* parser, txInteger character);
-static void* fxPatternParserCreateTerm(txPatternParser* parser, size_t size, txTermMeasure measure);
 
 static void fxAssertionMeasure(txPatternParser* parser, void* it, txInteger direction);
 static void fxCaptureMeasure(txPatternParser* parser, void* it, txInteger direction);
@@ -403,15 +409,11 @@ static void fxWordContinueCode(txPatternParser* parser, void* it, txInteger dire
 
 static void fxPatternParserCheckStack(txPatternParser* parser);
 static void* fxPatternParserCreateChunk(txPatternParser* parser, txSize size);
-static txCaptureName* fxPatternParserCreateCaptureName(txPatternParser* parser, txString string);
+static void* fxPatternParserCreateTerm(txPatternParser* parser, size_t size, txTermMeasure measure);
 static void fxPatternParserInitialize(txPatternParser* parser);
 static txBoolean fxPatternParserDecimal(txPatternParser* parser, txU4* value);
 static void fxPatternParserError(txPatternParser* parser, txString format, ...);
 static void fxPatternParserEscape(txPatternParser* parser, txBoolean punctuator);
-static txCaptureName* fxPatternParserGetCaptureName(txPatternParser* parser, txString string);
-static void fxPatternParserName(txPatternParser* parser, txInteger* length);
-static void fxPatternParserNameEscape(txPatternParser* parser);
-static void fxPatternParserNamedCapture(txPatternParser* parser, txCapture* capture);
 static void fxPatternParserNext(txPatternParser* parser);
 static void fxPatternParserTerminate(txPatternParser* parser);
 
@@ -1400,6 +1402,93 @@ void* fxCharSetWords(txPatternParser* parser)
 	return result;
 }
 
+void fxCaptureNameEscape(txPatternParser* parser)
+{
+	txString p;
+	fxPatternParserNext(parser);
+	if (parser->character != 'u')
+		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+	p = parser->pattern + parser->offset;
+	if (!fxParseUnicodeEscape(&p, &parser->character, 1, '\\'))
+		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+	parser->offset = mxPtrDiff(p - parser->pattern);
+}
+
+txCaptureName* fxCaptureNameGet(txPatternParser* parser, txString string)
+{
+	txCaptureName* name = parser->firstCaptureName;
+	while (name) {
+		if (!c_strcmp(name->string, string))
+			return name;
+		name = name->nextCaptureName;
+	}
+	return C_NULL;
+}
+
+void fxCaptureNameParse(txPatternParser* parser, txInteger* length)
+{
+	txString p = parser->error;
+	txString q = p + sizeof(parser->error) - 1;
+	if (parser->character == '\\')
+		fxCaptureNameEscape(parser);
+	if (fxIsIdentifierFirst(parser->character)) {
+		p = mxStringByteEncode(p, parser->character);
+		fxPatternParserNext(parser);
+	}
+	else
+		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+	while (parser->character != '>') {
+		if (parser->character == '\\')
+			fxCaptureNameEscape(parser);
+		if (fxIsIdentifierNext(parser->character)) {
+			if (mxStringByteLength(parser->character) > (q - p))
+				fxPatternParserError(parser, gxErrors[mxNameOverflow]);			
+			p = mxStringByteEncode(p, parser->character);
+			fxPatternParserNext(parser);
+		}
+		else
+			fxPatternParserError(parser, gxErrors[mxInvalidName]);			
+	}
+	parser->flags &= ~XS_REGEXP_NAME;
+	fxPatternParserNext(parser);
+	*p = 0;
+	*length = mxPtrDiff(p - parser->error);
+}
+
+void fxCaptureNameParticipate(txPatternParser* parser, txCapture* capture)
+{
+	txCapture* check = parser->firstNamedCapture;
+	while (check) {
+		if (check->name == capture->name)
+			fxPatternParserError(parser, gxErrors[mxDuplicateCapture]);
+		check = check->nextNamedCapture;
+	}
+	capture->nextNamedCapture = C_NULL;
+	if (parser->lastNamedCapture)
+		parser->lastNamedCapture->nextNamedCapture = capture;
+	else
+		parser->firstNamedCapture = capture;
+	parser->lastNamedCapture = capture;
+}
+
+txCaptureName* fxCaptureNamePut(txPatternParser* parser, txString string)
+{
+	txInteger length = c_strlen(string);
+	txCaptureName** address = &(parser->firstCaptureName);
+	txCaptureName* name;
+	while ((name = *address)) {
+		if (!c_strcmp(name->string, string))
+			return name;
+		address = &(name->nextCaptureName);
+	}
+	*address = name = fxPatternParserCreateChunk(parser, sizeof(txCaptureName) + length);
+	name->nextCaptureName = C_NULL;
+	name->index = parser->nameIndex;
+	c_memcpy(name->string, string, length + 1);
+	parser->nameIndex++;
+	return name;
+}
+
 void* fxDisjunctionParse(txPatternParser* parser, txInteger character)
 {
 	txDisjunction* result = NULL;
@@ -1552,7 +1641,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 					fxPatternParserError(parser, gxErrors[mxInvalidName]);
 				parser->flags |= XS_REGEXP_NAME;
 				fxPatternParserNext(parser);
-				fxPatternParserName(parser, &length);
+				fxCaptureNameParse(parser, &length);
 				current = fxPatternParserCreateTerm(parser, sizeof(txCaptureReference) + length, fxCaptureReferenceMeasure);
 				((txCaptureReference*)current)->captureIndex = -1;
 				c_memcpy(((txCaptureReference*)current)->name, parser->error, length + 1);
@@ -1645,11 +1734,11 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 					else {
 						parser->captureIndex++;
 						currentIndex++;
-						fxPatternParserName(parser, &length);
+						fxCaptureNameParse(parser, &length);
 						current = fxPatternParserCreateTerm(parser, sizeof(txCapture), fxCaptureMeasure);
 						((txCapture*)current)->captureIndex = currentIndex;
-						((txCapture*)current)->name = fxPatternParserCreateCaptureName(parser, parser->error);
-						fxPatternParserNamedCapture(parser, (txCapture*)current);
+						((txCapture*)current)->name = fxCaptureNamePut(parser, parser->error);
+						fxCaptureNameParticipate(parser, (txCapture*)current);
 						((txCapture*)current)->term = fxDisjunctionParse(parser, ')');	
 						fxPatternParserNext(parser);
 						current = fxQuantifierParse(parser, current, currentIndex - 1);
@@ -1771,7 +1860,7 @@ void fxCaptureReferenceMeasure(txPatternParser* parser, void* it, txInteger dire
 {
 	txCaptureReference* self = it;
 	if (self->captureIndex < 0) {
-		txCaptureName* name = fxPatternParserGetCaptureName(parser, self->name);
+		txCaptureName* name = fxCaptureNameGet(parser, self->name);
 		if (name)
 			self->nameIndex = name->index;
 		else
@@ -2070,28 +2159,6 @@ void fxPatternParserCheckStack(txPatternParser* parser)
 		fxPatternParserError(parser, gxErrors[mxStackOverflow]);
 }
 
-txCaptureName* fxPatternParserCreateCaptureName(txPatternParser* parser, txString string)
-{
-	txInteger length = c_strlen(string);
-	txCaptureName** address = &(parser->firstName);
-	txCaptureName* name;
-	while ((name = *address)) {
-		if (!c_strcmp(name->string, string))
-			return name;
-		address = &(name->nextCaptureName);
-	}
-	*address = name = c_malloc(sizeof(txCaptureName) + length);
-	if (!name)
-		fxPatternParserError(parser, gxErrors[mxNotEnoughMemory]);
-	name->next = parser->first;
-	name->nextCaptureName = C_NULL;
-	name->index = parser->nameIndex;
-	c_memcpy(name->string, string, length + 1);
-	parser->nameIndex++;
-	parser->first = (txTerm*)name;
-	return name;
-}
-
 void* fxPatternParserCreateChunk(txPatternParser* parser, txSize size)
 {
 	txTerm* term = c_malloc(sizeof(txTerm*) + size);
@@ -2249,76 +2316,6 @@ void fxPatternParserEscape(txPatternParser* parser, txBoolean punctuator)
 	}
 }
 
-txCaptureName* fxPatternParserGetCaptureName(txPatternParser* parser, txString string)
-{
-	txCaptureName* name = parser->firstName;
-	while (name) {
-		if (!c_strcmp(name->string, string))
-			return name;
-		name = name->nextCaptureName;
-	}
-	return C_NULL;
-}
-
-
-void fxPatternParserName(txPatternParser* parser, txInteger* length)
-{
-	txString p = parser->error;
-	txString q = p + sizeof(parser->error) - 1;
-	if (parser->character == '\\')
-		fxPatternParserNameEscape(parser);
-	if (fxIsIdentifierFirst(parser->character)) {
-		p = mxStringByteEncode(p, parser->character);
-		fxPatternParserNext(parser);
-	}
-	else
-		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
-	while (parser->character != '>') {
-		if (parser->character == '\\')
-			fxPatternParserNameEscape(parser);
-		if (fxIsIdentifierNext(parser->character)) {
-			if (mxStringByteLength(parser->character) > (q - p))
-				fxPatternParserError(parser, gxErrors[mxNameOverflow]);			
-			p = mxStringByteEncode(p, parser->character);
-			fxPatternParserNext(parser);
-		}
-		else
-			fxPatternParserError(parser, gxErrors[mxInvalidName]);			
-	}
-	parser->flags &= ~XS_REGEXP_NAME;
-	fxPatternParserNext(parser);
-	*p = 0;
-	*length = mxPtrDiff(p - parser->error);
-}
-
-void fxPatternParserNameEscape(txPatternParser* parser)
-{
-	txString p;
-	fxPatternParserNext(parser);
-	if (parser->character != 'u')
-		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
-	p = parser->pattern + parser->offset;
-	if (!fxParseUnicodeEscape(&p, &parser->character, 1, '\\'))
-		fxPatternParserError(parser, gxErrors[mxInvalidName]);			
-	parser->offset = mxPtrDiff(p - parser->pattern);
-}
-
-void fxPatternParserNamedCapture(txPatternParser* parser, txCapture* capture)
-{
-	txCapture* check = parser->firstNamedCapture;
-	while (check) {
-		if (check->name == capture->name)
-			fxPatternParserError(parser, gxErrors[mxDuplicateCapture]);
-		check = check->nextNamedCapture;
-	}
-	capture->nextNamedCapture = C_NULL;
-	if (parser->lastNamedCapture)
-		parser->lastNamedCapture->nextNamedCapture = capture;
-	else
-		parser->firstNamedCapture = capture;
-	parser->lastNamedCapture = capture;
-}
-
 void fxPatternParserNext(txPatternParser* parser)
 {
 	txString p = parser->pattern + parser->offset;
@@ -2427,9 +2424,8 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 			parser->assertionIndex = 0;
 			parser->captureIndex = 0;
 			parser->nameIndex = 0;
-			parser->captureIndex = 0;
 			parser->quantifierIndex = 0;
-			parser->firstName = NULL;
+			parser->firstCaptureName = NULL;
 			parser->firstNamedCapture = NULL;
 			parser->lastNamedCapture = NULL;
 			fxPatternParserNext(parser);
