@@ -53,8 +53,9 @@ static txSlot* fxCheckSetInstance(txMachine* the, txSlot* slot, txBoolean mutabl
 static txSlot* fxCheckSetValue(txMachine* the);
 static txSlot* fxNewSetIteratorInstance(txMachine* the, txSlot* iterable, txInteger kind);
 
+static txSlot* fxCanonicalizeKeyedCollectionKey(txSlot* key);
 static void fxClearEntries(txMachine* the, txSlot* table, txSlot* list, txBoolean paired);
-static txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txBoolean paired); 
+static txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* slot, txBoolean paired, txBoolean fit); 
 static txSlot* fxGetEntry(txMachine* the, txSlot* table, txSlot* slot);
 static void fxPurgeEntries(txMachine* the, txSlot* list);
 static void fxResizeEntries(txMachine* the, txSlot* table, txSlot* list);
@@ -128,6 +129,15 @@ void fxBuildMapSet(txMachine* the)
 	slot = fxNextSlotProperty(the, slot, property, mxID(_keys), XS_DONT_ENUM_FLAG);
 	slot = fxNextSlotProperty(the, slot, property, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 	slot = fxNextStringXProperty(the, slot, "Set", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
+#if mxECMAScript2025
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Set_prototype_difference), 1, mxID(_difference), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Set_prototype_intersection), 1, mxID(_intersection), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Set_prototype_isDisjointFrom), 1, mxID(_isDisjointFrom), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Set_prototype_isSubsetOf), 1, mxID(_isSubsetOf), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Set_prototype_isSupersetOf), 1, mxID(_isSupersetOf), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Set_prototype_symmetricDifference), 1, mxID(_symmetricDifference), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Set_prototype_union), 1, mxID(_union), XS_DONT_ENUM_FLAG);
+#endif
 	mxSetPrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_Set), 0, mxID(_Set));
 	mxSetConstructor = *the->stack;
@@ -337,7 +347,7 @@ void fx_Map_prototype_delete(txMachine* the)
 	txSlot* table = instance->next;
 	txSlot* list = table->next;
 	txSlot* key = fxCheckMapKey(the);
-	mxResult->value.boolean = fxDeleteEntry(the, table, list, key, 1);
+	mxResult->value.boolean = fxDeleteEntry(the, table, list, key, 1, 1);
 	mxResult->kind = XS_BOOLEAN_KIND;
 }
 
@@ -506,6 +516,41 @@ txSlot* fxCheckSetInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 	return C_NULL;
 }
 
+txSlot* fxCheckSetRecord(txMachine* the, txInteger* otherSize)
+{
+	txSlot* other;
+	txNumber size;
+	if (mxArgc < 1)
+		mxTypeError("other is no object");
+	other = mxArgv(0);	
+	if (!mxIsReference(other))
+		mxTypeError("other is no object");
+		
+	mxPushSlot(other);
+	mxGetID(mxID(_size));	
+	size = fxToNumber(the, the->stack);
+	if (c_isnan(size))
+		mxTypeError("other.size is NaN");
+	size = c_trunc(size);
+	if (size < 0)
+		mxRangeError("other.size < 0");
+	if (otherSize)
+		*otherSize= (txInteger)size;
+	mxPop();
+	
+	mxPushSlot(other);
+	mxGetID(mxID(_has));
+	if (!fxIsCallable(the, the->stack))
+		mxTypeError("other.has is no function");
+			
+	mxPushSlot(other);
+	mxGetID(mxID(_keys));
+	if (!fxIsCallable(the, the->stack))
+		mxTypeError("other.keys is no function");
+		
+	return other;
+}
+
 txSlot* fxCheckSetValue(txMachine* the)
 {
 	if (mxArgc > 0) {
@@ -516,7 +561,7 @@ txSlot* fxCheckSetValue(txMachine* the)
 	return C_NULL;
 }
 
-txSlot* fxNewSetInstance(txMachine* the)
+txSlot* fxNewSetInstance(txMachine* the, txInteger tableLength)
 {
 	txSlot* set;
 	txSlot* table;
@@ -532,13 +577,13 @@ txSlot* fxNewSetInstance(txMachine* the)
 	table = set->next = fxNewSlot(the);
 	list = table->next = fxNewSlot(the);
 	size = list->next = fxNewSlot(the);
-	address = (txSlot**)fxNewChunk(the, mxTableMinLength * sizeof(txSlot*));
-	c_memset(address, 0, mxTableMinLength * sizeof(txSlot*));
+	address = (txSlot**)fxNewChunk(the, tableLength * sizeof(txSlot*));
+	c_memset(address, 0, tableLength * sizeof(txSlot*));
 	/* TABLE */
 	table->flag = XS_INTERNAL_FLAG;
 	table->kind = XS_SET_KIND;
 	table->value.table.address = address;
-	table->value.table.length = mxTableMinLength;
+	table->value.table.length = tableLength;
 	/* LIST */
 	list->flag = XS_INTERNAL_FLAG;
 	list->kind = XS_LIST_KIND;
@@ -558,7 +603,7 @@ void fx_Set(txMachine* the)
 		mxTypeError("call: Set");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxSetPrototype);
-	fxNewSetInstance(the);
+	fxNewSetInstance(the, mxTableMinLength);
 	mxPullSlot(mxResult);
 	if (mxArgc < 1)
 		return;
@@ -614,8 +659,75 @@ void fx_Set_prototype_delete(txMachine* the)
 	txSlot* table = instance->next;
 	txSlot* list = table->next;
 	txSlot* value = fxCheckSetValue(the);
-	mxResult->value.boolean = fxDeleteEntry(the, table, list, value, 0);
+	mxResult->value.boolean = fxDeleteEntry(the, table, list, value, 0, 1);
 	mxResult->kind = XS_BOOLEAN_KIND;
+}
+
+void fx_Set_prototype_difference(txMachine* the)
+{
+	txSlot* stack = the->stack;
+	txSlot* instance = fxCheckSetInstance(the, mxThis, XS_IMMUTABLE);
+	txSlot* table = instance->next;
+	txSlot* list = table->next;
+	txInteger size = list->next->value.integer, otherSize;
+	txSlot* other = fxCheckSetRecord(the, &otherSize);
+	txSlot* otherHas = the->stack + 1;
+	txSlot* otherKeys = the->stack;
+	txSlot *resultInstance, *resultTable, *resultList, *value;
+
+	mxPush(mxSetPrototype);
+	resultInstance = fxNewSetInstance(the, table->value.table.length);
+	mxPullSlot(mxResult);
+	resultTable = resultInstance->next;
+	resultList = resultTable->next;
+	value = list->value.list.first;
+	while (value) {
+		fxSetEntry(the, resultTable, resultList, fxDuplicateSlot(the, value), C_NULL);
+		value = value->next;
+	}	
+	
+	if (size <= otherSize) {
+		mxPushList();
+		value = the->stack->value.list.first = list->value.list.first;
+		while (value) {
+			if (!(value->flag & XS_DONT_ENUM_FLAG)) {
+				mxPushSlot(other);
+				mxPushSlot(otherHas);
+				mxCall();
+				mxPushSlot(value);
+				mxRunCount(1);
+				if (fxToBoolean(the, the->stack))
+					fxDeleteEntry(the, resultTable, resultList, value, 0, 0);
+				mxPop();
+			}
+			value = the->stack->value.list.first = value->next;
+		}
+	}
+	else {
+		txSlot *iterator, *next;
+		mxPushSlot(other);
+		mxPushSlot(otherKeys);
+		mxCall();
+		mxRunCount(0);
+		iterator = the->stack;
+		mxDub();
+		mxGetID(mxID(_next));
+		next = the->stack;
+		mxTemporary(value);
+		while (fxIteratorNext(the, iterator, next, value)) {
+			mxTry(the) {
+				fxCanonicalizeKeyedCollectionKey(value);
+				fxDeleteEntry(the, resultTable, resultList, value, 0, 0);
+			}
+			mxCatch(the) {
+				fxIteratorReturn(the, iterator, 1);
+				fxJump(the);
+			}
+		}
+	}
+	fxResizeEntries(the, resultTable, resultList);
+	fxPurgeEntries(the, resultList);
+	the->stack = stack;
 }
 
 void fx_Set_prototype_entries(txMachine* the)
@@ -665,6 +777,80 @@ void fx_Set_prototype_has(txMachine* the)
 	mxResult->value.boolean = (result) ? 1 : 0;
 }
 
+void fx_Set_prototype_intersection(txMachine* the)
+{
+	txSlot* stack = the->stack;
+	txSlot* instance = fxCheckSetInstance(the, mxThis, XS_IMMUTABLE);
+	txSlot* table = instance->next;
+	txSlot* list = table->next;
+	txInteger size = list->next->value.integer, otherSize;
+	txSlot* other = fxCheckSetRecord(the, &otherSize);
+	txSlot* otherHas = the->stack + 1;
+	txSlot* otherKeys = the->stack;
+	txSlot *resultInstance, *resultTable, *resultList, *value;
+	
+	mxPush(mxSetPrototype);
+	resultInstance = fxNewSetInstance(the, mxTableMinLength);
+	mxPullSlot(mxResult);
+	resultTable = resultInstance->next;
+	resultList = resultTable->next;
+	
+	if (size <= otherSize) {
+		mxPushList();
+		value = the->stack->value.list.first = list->value.list.first;
+		while (value) {
+			if (!(value->flag & XS_DONT_ENUM_FLAG)) {
+				mxPushSlot(other);
+				mxPushSlot(otherHas);
+				mxCall();
+				mxPushSlot(value);
+				mxRunCount(1);
+				if (fxToBoolean(the, the->stack))
+					fxSetEntry(the, resultTable, resultList, value, C_NULL);
+				mxPop();
+			}
+			value = the->stack->value.list.first = value->next;
+		}
+	}
+	else {
+		txSlot *iterator, *next;
+		mxPushSlot(other);
+		mxPushSlot(otherKeys);
+		mxCall();
+		mxRunCount(0);
+		iterator = the->stack;
+		mxDub();
+		mxGetID(mxID(_next));
+		next = the->stack;
+		mxTemporary(value);
+		while (fxIteratorNext(the, iterator, next, value)) {
+			mxTry(the) {
+				fxCanonicalizeKeyedCollectionKey(value);
+				if (fxGetEntry(the, table, value))
+					fxSetEntry(the, resultTable, resultList, value, C_NULL);
+			}
+			mxCatch(the) {
+				fxIteratorReturn(the, iterator, 1);
+				fxJump(the);
+			}
+		}
+	}
+
+	the->stack = stack;
+}
+
+void fx_Set_prototype_isDisjointFrom(txMachine* the)
+{
+}
+
+void fx_Set_prototype_isSubsetOf(txMachine* the)
+{
+}
+
+void fx_Set_prototype_isSupersetOf(txMachine* the)
+{
+}
+
 void fx_Set_prototype_size(txMachine* the)
 {
 	txSlot* instance = fxCheckSetInstance(the, mxThis, XS_IMMUTABLE);
@@ -672,6 +858,56 @@ void fx_Set_prototype_size(txMachine* the)
 	txSlot* list = table->next;
 	mxResult->kind = XS_INTEGER_KIND;
 	mxResult->value.integer = list->next->value.integer;
+}
+
+void fx_Set_prototype_symmetricDifference(txMachine* the)
+{
+}
+
+void fx_Set_prototype_union(txMachine* the)
+{
+	txSlot* stack = the->stack;
+	txSlot* instance = fxCheckSetInstance(the, mxThis, XS_IMMUTABLE);
+	txSlot* table = instance->next;
+	txSlot* list = table->next;
+	txSlot* other = fxCheckSetRecord(the, C_NULL);
+	txSlot* otherKeys = the->stack;
+	txSlot *resultInstance, *resultTable, *resultList, *value;
+	txSlot *iterator, *next;
+
+	mxPush(mxSetPrototype);
+	resultInstance = fxNewSetInstance(the, table->value.table.length);
+	mxPullSlot(mxResult);
+	resultTable = resultInstance->next;
+	resultList = resultTable->next;
+	value = list->value.list.first;
+	while (value) {
+		fxSetEntry(the, resultTable, resultList, fxDuplicateSlot(the, value), C_NULL);
+		value = value->next;
+	}	
+	
+	mxPushSlot(other);
+	mxPushSlot(otherKeys);
+	mxCall();
+	mxRunCount(0);
+	iterator = the->stack;
+	mxDub();
+	mxGetID(mxID(_next));
+	next = the->stack;
+	mxTemporary(value);
+	while (fxIteratorNext(the, iterator, next, value)) {
+		mxTry(the) {
+			fxCanonicalizeKeyedCollectionKey(value);
+			if (!fxGetEntry(the, resultTable, value))
+				fxSetEntry(the, resultTable, resultList, value, C_NULL);
+		}
+		mxCatch(the) {
+			fxIteratorReturn(the, iterator, 1);
+			fxJump(the);
+		}
+	}
+	
+	the->stack = stack;
 }
 
 void fx_Set_prototype_values(txMachine* the)
@@ -733,6 +969,15 @@ void fx_SetIterator_prototype_next(txMachine* the)
 	}
 }
 
+txSlot* fxCanonicalizeKeyedCollectionKey(txSlot* key)
+{
+	if ((key->kind == XS_NUMBER_KIND) && (key->value.number == 0)) { \
+		key->kind = XS_INTEGER_KIND; \
+		key->value.integer = 0; \
+	}
+	return key;
+}
+
 void fxClearEntries(txMachine* the, txSlot* table, txSlot* list, txBoolean paired)
 {
 	txSlot* slot = list->value.list.first;
@@ -747,7 +992,7 @@ void fxClearEntries(txMachine* the, txSlot* table, txSlot* list, txBoolean paire
 	fxPurgeEntries(the, list);
 }
 
-txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txBoolean paired) 
+txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key, txBoolean paired, txBoolean fit) 
 {
 	txSlot* info = list->next;
 	txU4 sum = fxSumEntry(the, key);
@@ -770,8 +1015,10 @@ txBoolean fxDeleteEntry(txMachine* the, txSlot* table, txSlot* list, txSlot* key
 					last->kind = XS_UNDEFINED_KIND;
 				}
 				info->value.integer--;
-				fxResizeEntries(the, table, list);
-				fxPurgeEntries(the, list);
+				if (fit) {
+					fxResizeEntries(the, table, list);
+					fxPurgeEntries(the, list);
+				}
 				return 1;
 			}
 		}

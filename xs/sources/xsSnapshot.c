@@ -90,7 +90,12 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #else
 	#define mxUint8ArrayBase64Additions 0
 #endif
-#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions)
+#if mxECMAScript2025
+	#define mxECMAScript2025Additions 7
+#else
+	#define mxECMAScript2025Additions 0
+#endif
+#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxECMAScript2025Additions)
 
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
@@ -638,6 +643,15 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Uint8Array_prototype_setFromHex,
 	fx_Uint8Array_prototype_toBase64,
 	fx_Uint8Array_prototype_toHex
+#endif
+#if mxECMAScript2025
+	fx_Set_prototype_difference,
+	fx_Set_prototype_intersection,
+	fx_Set_prototype_isDisjointFrom,
+	fx_Set_prototype_isSubsetOf,
+	fx_Set_prototype_isSupersetOf,
+	fx_Set_prototype_symmetricDifference,
+	fx_Set_prototype_union,
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];

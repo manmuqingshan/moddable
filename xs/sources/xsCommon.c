@@ -1824,6 +1824,15 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"toHex",
 	"written",
 #endif
+#if mxECMAScript2025
+	"difference",
+	"intersection",
+	"isDisjointFrom",
+	"isSubsetOf",
+	"isSupersetOf",
+	"symmetricDifference",
+	"union",
+#endif
 };
 
 #if mxCanonicalNaN

@@ -53,6 +53,10 @@
 	#define __has_builtin(x) 0
 #endif
 
+#ifndef mxECMAScript2025
+	#define mxECMAScript2025 1
+#endif
+
 #ifndef mxECMAScript2024
 	#define mxECMAScript2024 1
 #endif
@@ -120,13 +124,17 @@ typedef struct {
 #define XS_ATOM_SIGNATURE 0x5349474E /* 'SIGN' */
 #define XS_ATOM_SYMBOLS 0x53594D42 /* 'SYMB' */
 #define XS_ATOM_VERSION 0x56455253 /* 'VERS' */
-#if mxECMAScript2024
-	#define XS_MAJOR_VERSION 15
+#if mxECMAScript2025
+	#define XS_MAJOR_VERSION 16
 #else
-	#if mxECMAScript2023
-		#define XS_MAJOR_VERSION 14
+	#if mxECMAScript2024
+		#define XS_MAJOR_VERSION 15
 	#else
-		#define XS_MAJOR_VERSION 13
+		#if mxECMAScript2023
+			#define XS_MAJOR_VERSION 14
+		#else
+			#define XS_MAJOR_VERSION 13
+		#endif
 	#endif
 #endif
 #if mxExplicitResourceManagement
@@ -1236,6 +1244,15 @@ enum {
 	_toBase64,
 	_toHex,
 	_written,
+#endif
+#if mxECMAScript2025
+	_difference,
+	_intersection,
+	_isDisjointFrom,
+	_isSubsetOf,
+	_isSupersetOf,
+	_symmetricDifference,
+	_union,
 #endif
 	XS_ID_COUNT
 };
