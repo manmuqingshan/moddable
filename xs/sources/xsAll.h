@@ -1080,6 +1080,7 @@ mxExport void fx_SyntaxError(txMachine* the);
 mxExport void fx_TypeError(txMachine* the);
 mxExport void fx_URIError(txMachine* the);
 mxExport void fx_Error_prototype_get_stack(txMachine* the);
+mxExport void fx_Error_prototype_set_stack(txMachine* the);
 
 enum {
 	XS_NO_ERROR = 0,

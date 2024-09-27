@@ -91,7 +91,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 	#define mxUint8ArrayBase64Additions 0
 #endif
 #if mxECMAScript2025
-	#define mxECMAScript2025Additions 7
+	#define mxECMAScript2025Additions 8
 #else
 	#define mxECMAScript2025Additions 0
 #endif
@@ -645,6 +645,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Uint8Array_prototype_toHex
 #endif
 #if mxECMAScript2025
+	fx_Error_prototype_set_stack,
 	fx_Set_prototype_difference,
 	fx_Set_prototype_intersection,
 	fx_Set_prototype_isDisjointFrom,
