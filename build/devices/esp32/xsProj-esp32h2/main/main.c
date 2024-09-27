@@ -86,6 +86,10 @@ extern void mc_setup(xsMachine *the);
 	uint8_t gSoftReset;
 #endif
 
+#ifndef UART_HW_FIFO_LEN
+	#define UART_HW_FIFO_LEN(USE_UART) UART_FIFO_LEN
+#endif
+
 static xsMachine *gThe;		// the main XS virtual machine running
 
 /*
@@ -108,21 +112,23 @@ static xsMachine *gThe;		// the main XS virtual machine running
 #endif
 
 #ifdef mxDebug
+
+#if USE_USB
 static void debug_task(void *pvParameter)
 {
-#if USE_USB
 	usb_serial_jtag_driver_config_t cfg = { .rx_buffer_size = 4096, .tx_buffer_size = 2048 };
 	usb_serial_jtag_driver_install(&cfg);
-#endif
 
 	while (true) {
-
-#if USE_USB
 		fxReceiveLoop();
 		modDelayMilliseconds(1);
+	}
+}
 
 #else	// !USE_USB
-
+static void debug_task(void *pvParameter)
+{
+	while (true) {
 		uart_event_t event;
 
 		if (!xQueueReceive((QueueHandle_t)pvParameter, (void * )&event, portMAX_DELAY))
@@ -130,9 +136,9 @@ static void debug_task(void *pvParameter)
 
 		if (UART_DATA == event.type)
 			fxReceiveLoop();
-#endif	// !USE_USB
 	}
 }
+#endif
 #endif
 
 void loop_task(void *pvParameter)
@@ -200,6 +206,8 @@ void ESP_put(uint8_t *c, int count) {
 	int sent = 0;
 	while (count > 0) {
 		sent = usb_serial_jtag_write_bytes(c, count, 10);
+		if (sent <= 0)
+			return;
 		c += sent;
 		count -= sent;
 	}
@@ -262,8 +270,10 @@ void app_main() {
 #endif
 
 #if USE_USB
+#ifdef mxDebug
     xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), 0, 8, NULL);
-    printf("START USB CONSOLE!!!\n");
+    printf("USB CONNECTED\r\n");
+#endif
 #else // !USE_USB
 
 	esp_err_t err;
@@ -271,7 +281,7 @@ void app_main() {
 #ifdef mxDebug
 	uartConfig.baud_rate = DEBUGGER_SPEED;
 #else
-	uartConfig.baud_rate = 115200;		//@@ different from ESP8266
+	uartConfig.baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE;
 #endif
 	uartConfig.data_bits = UART_DATA_8_BITS;
 	uartConfig.parity = UART_PARITY_DISABLE;
@@ -305,5 +315,4 @@ void app_main() {
 #endif	// ! USE_USB
 
 	xTaskCreate(loop_task, "main", kStack, NULL, 4, NULL);
-//	xTaskCreatePinnedToCore(loop_task, "main", kStack, NULL, 4, NULL, 0);
 }

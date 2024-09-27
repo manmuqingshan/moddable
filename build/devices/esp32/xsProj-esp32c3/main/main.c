@@ -200,6 +200,8 @@ void ESP_put(uint8_t *c, int count) {
 	int sent = 0;
     while (count > 0) {
 		sent = usb_serial_jtag_write_bytes(c, count, 10);
+		if (sent <= 0)
+			return;
 		c += sent;
 		count -= sent;
     }
@@ -265,7 +267,7 @@ void app_main() {
 #if USE_USB
 #ifdef mxDebug
 	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), 0, 8, NULL);
-	printf("START USB CONSOLE!!!\n");
+	printf("USB CONNECTED\r\n");
 #endif
 #else
 	esp_err_t err;
@@ -274,7 +276,7 @@ void app_main() {
 #ifdef mxDebug
 	uartConfig.baud_rate = DEBUGGER_SPEED;
 #else
-	uartConfig.baud_rate = 115200;		//@@ different from ESP8266
+	uartConfig.baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE;
 #endif
 	uartConfig.data_bits = UART_DATA_8_BITS;
 	uartConfig.parity = UART_PARITY_DISABLE;

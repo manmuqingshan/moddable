@@ -211,11 +211,11 @@ txSlot* fxCheckMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_MAP_KIND) && (instance != mxMapPrototype.value.reference)) {
 			if (mutable && (slot->flag & XS_DONT_SET_FLAG))
-				mxTypeError("Map instance is read-only");
+				mxTypeError("this: read-only Map instance");
 			return instance;
 		}
 	}
-	mxTypeError("this is no Map instance");
+	mxTypeError("this: not a Map instance");
 	return C_NULL;
 }
 
@@ -282,7 +282,7 @@ void fx_Map(txMachine* the)
 	mxGetID(mxID(_set));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
-		mxTypeError("set is no function");
+		mxTypeError("result.set: not a function");
 	mxTemporary(iterator);
 	mxTemporary(next);
 	fxGetIterator(the, iterable, iterator, next, 0);	
@@ -290,7 +290,7 @@ void fx_Map(txMachine* the)
 	while (fxIteratorNext(the, iterator, next, value)) {
 		mxTry(the) {
 			if (value->kind != XS_REFERENCE_KIND)
-				mxTypeError("item is no object");
+				mxTypeError("item: not an object");
 			mxPushSlot(mxResult);
 			mxPushSlot(function);
 			mxCall();
@@ -514,11 +514,11 @@ txSlot* fxCheckSetInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_SET_KIND) && (instance != mxSetPrototype.value.reference)) {
 			if (mutable && (slot->flag & XS_DONT_SET_FLAG))
-				mxTypeError("Set instance is read-only");
+				mxTypeError("this: read-only Set instance");
 			return instance;
 		}
 	}
-	mxTypeError("this is no Set instance");
+	mxTypeError("this: not a Set instance");
 	return C_NULL;
 }
 
@@ -670,7 +670,7 @@ void fx_Set(txMachine* the)
 	mxGetID(mxID(_add));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
-		mxTypeError("add is no function");
+		mxTypeError("result.add: not a function");
 	mxTemporary(iterator);
 	mxTemporary(next);
 	fxGetIterator(the, iterable, iterator, next, 0);	
@@ -1352,11 +1352,11 @@ txSlot* fxCheckWeakMapInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_WEAK_MAP_KIND) && (instance != mxWeakMapPrototype.value.reference)) {
 			if (mutable && (slot->flag &  XS_DONT_SET_FLAG))
-				mxTypeError("WeakMap instance is read-only");
+				mxTypeError("this: read-only WeakMap instance");
 			return instance;
 		}
 	}
-	mxTypeError("this is no WeakMap instance");
+	mxTypeError("this: not a WeakMap instance");
 	return C_NULL;
 }
 
@@ -1365,7 +1365,7 @@ txSlot* fxCheckWeakMapKey(txMachine* the, txBoolean mutable)
 	if (mxArgc > 0) {
 		txSlot* slot = fxCanBeHeldWeakly(the, mxArgv(0));
 		if (slot && mutable && (slot->flag & XS_MARK_FLAG))
-			mxTypeError("WeakMap key is read-only");
+			mxTypeError("key: read-only");
 		return slot;
 	}
 	return C_NULL;
@@ -1409,7 +1409,7 @@ void fx_WeakMap(txMachine* the)
 	mxGetID(mxID(_set));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
-		mxTypeError("set is no function");
+		mxTypeError("result.set: not a function");
 	mxTemporary(iterator);
 	mxTemporary(next);
 	fxGetIterator(the, iterable, iterator, next, 0);	
@@ -1420,7 +1420,7 @@ void fx_WeakMap(txMachine* the)
 			mxPushSlot(function);
 			mxCall();
 			if (value->kind != XS_REFERENCE_KIND)
-				mxTypeError("item is no object");
+				mxTypeError("item: not an object");
 			mxPushSlot(value);
 			mxGetIndex(0);
 			mxPushSlot(value);
@@ -1469,7 +1469,7 @@ void fx_WeakMap_prototype_set(txMachine* the)
 	txSlot* instance = fxCheckWeakMapInstance(the, mxThis, XS_MUTABLE);
 	txSlot* key = fxCheckWeakMapKey(the, XS_MUTABLE);
 	if (!key)
-		mxTypeError("key is no object");
+		mxTypeError("key: not an object");
 	fxSetWeakEntry(the, instance->next, key, (mxArgc > 1) ? mxArgv(1) : &mxUndefined);
 	*mxResult = *mxThis;
 }
@@ -1480,11 +1480,11 @@ txSlot* fxCheckWeakSetInstance(txMachine* the, txSlot* slot, txBoolean mutable)
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_WEAK_SET_KIND) && (instance != mxWeakSetPrototype.value.reference)) {
 			if (mutable && (slot->flag & XS_DONT_SET_FLAG))
-				mxTypeError("WeakSet instance is read-only");
+				mxTypeError("this: read-only WeakSet instance");
 			return instance;
 		}
 	}
-	mxTypeError("this is no WeakSet instance");
+	mxTypeError("this: not a WeakSet instance");
 	return C_NULL;
 }
 
@@ -1493,7 +1493,7 @@ txSlot* fxCheckWeakSetValue(txMachine* the, txBoolean mutable)
 	if (mxArgc > 0) {
 		txSlot* slot = fxCanBeHeldWeakly(the, mxArgv(0));
 		if (slot && mutable && (slot->flag & XS_MARK_FLAG))
-			mxTypeError("WeakSet value is read-only");
+			mxTypeError("value: read-only");
 		return slot;
 	}
 	return C_NULL;
@@ -1537,7 +1537,7 @@ void fx_WeakSet(txMachine* the)
 	mxGetID(mxID(_add));	
 	function = the->stack;	
 	if (!fxIsCallable(the, function))	
-		mxTypeError("add is no function");
+		mxTypeError("result.add: not a function");
 	mxTemporary(iterator);
 	mxTemporary(next);
 	fxGetIterator(the, iterable, iterator, next, 0);	
@@ -1563,7 +1563,7 @@ void fx_WeakSet_prototype_add(txMachine* the)
 	txSlot* instance = fxCheckWeakSetInstance(the, mxThis, XS_MUTABLE);
 	txSlot* value = fxCheckWeakSetValue(the, XS_MUTABLE);
 	if (!value)
-		mxTypeError("value is no object");
+		mxTypeError("value: not an object");
 	fxSetWeakEntry(the, instance->next, value, &mxUndefined);
 	*mxResult = *mxThis;
 }
@@ -1722,7 +1722,7 @@ void fx_WeakRef(txMachine* the)
 		mxTypeError("no target");
 	target = fxCanBeHeldWeakly(the, mxArgv(0));
 	if (!target)
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxWeakRefPrototype);
 	instance = fxNewWeakRefInstance(the);
@@ -1755,11 +1755,11 @@ txSlot* fxCheckFinalizationRegistryInstance(txMachine* the, txSlot* slot)
 		txSlot* instance = slot->value.reference;
 		if (((slot = instance->next)) && (slot->flag & XS_INTERNAL_FLAG) && (slot->kind == XS_CLOSURE_KIND) && (slot->value.closure->kind == XS_FINALIZATION_REGISTRY_KIND)) {
 			if (slot->flag & XS_MARK_FLAG)
-				mxTypeError("FinalizationRegistry instance is read-only");
+				mxTypeError("this: read-only FinalizationRegistry instance");
 			return instance;
 		}
 	}
-	mxTypeError("this is no FinalizationRegistry instance");
+	mxTypeError("this: not a FinalizationRegistry instance");
 	return C_NULL;
 }
 
@@ -1776,7 +1776,7 @@ void fx_FinalizationRegistry(txMachine* the)
 		mxTypeError("no callback");
 	callback = mxArgv(0);
 	if (!fxIsCallable(the, callback))
-		mxTypeError("callback is no function");
+		mxTypeError("callback: not a function");
 	mxPushSlot(mxTarget);
 	fxGetPrototypeFromConstructor(the, &mxFinalizationRegistryPrototype);
 	instance = fxNewSlot(the);
@@ -1812,7 +1812,7 @@ void fx_FinalizationRegistry_prototype_cleanupSome(txMachine* the)
 	txSlot** address;
 	txSlot* slot;
 	if (!mxIsReference(mxThis))
-		mxTypeError("this is no object");
+		mxTypeError("this: not an object");
 	instance = fxCheckFinalizationRegistryInstance(the, mxThis);
 	registry = instance->next->value.closure;
 	if (mxArgc > 0) {
@@ -1820,7 +1820,7 @@ void fx_FinalizationRegistry_prototype_cleanupSome(txMachine* the)
 		if (mxIsUndefined(callback))
 			callback = C_NULL;
 		else if (!fxIsCallable(the, callback))
-			mxTypeError("callback is no function");
+			mxTypeError("callback: not a function");
 	}
 	fx_FinalizationRegistryCleanup(the, registry, callback);
 	callback = registry->value.finalizationRegistry.callback;
@@ -1847,14 +1847,14 @@ void fx_FinalizationRegistry_prototype_register(txMachine* the)
 	txSlot** address;
 	txSlot* slot;
 	if (!mxIsReference(mxThis))
-		mxTypeError("this is no object");
+		mxTypeError("this: not an object");
 	instance = fxCheckFinalizationRegistryInstance(the, mxThis);
 	registry = instance->next->value.closure;
 	if (mxArgc < 1)
 		mxTypeError("no target");
 	target = fxCanBeHeldWeakly(the, mxArgv(0));
 	if (!target)
-		mxTypeError("target is no object");
+		mxTypeError("target: not an object");
 	if (mxArgc > 1) {
 		if (fxIsSameValue(the, mxArgv(0), mxArgv(1), 1))
 			mxTypeError("target and holdings are the same");
@@ -1866,7 +1866,7 @@ void fx_FinalizationRegistry_prototype_register(txMachine* the)
 		else {
 			token = fxCanBeHeldWeakly(the, token);
 			if (!token)
-				mxTypeError("token is no object");
+				mxTypeError("token: not an object");
 		}
 	}
 	callback = registry->value.finalizationRegistry.callback;
@@ -1903,13 +1903,13 @@ void fx_FinalizationRegistry_prototype_unregister(txMachine* the)
 	txSlot** address;
 	txSlot* slot;
 	if (!mxIsReference(mxThis))
-		mxTypeError("this is no object");
+		mxTypeError("this: not an object");
 	instance = fxCheckFinalizationRegistryInstance(the, mxThis);
 	if (mxArgc < 1)
 		mxTypeError("no token");
 	token = fxCanBeHeldWeakly(the, mxArgv(0));
 	if (!token)
-		mxTypeError("token is no object");
+		mxTypeError("token: not an object");
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 0;
 	registry = instance->next->value.closure;

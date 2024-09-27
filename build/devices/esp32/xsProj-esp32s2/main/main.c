@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -81,6 +81,10 @@ extern void mc_setup(xsMachine *the);
 
 #if MODDEF_SOFTRESET
 	uint8_t gSoftReset;
+#endif
+
+#ifndef UART_HW_FIFO_LEN
+	#define UART_HW_FIFO_LEN(USE_UART) UART_FIFO_LEN
 #endif
 
 static xsMachine *gThe;		// the main XS virtual machine running
@@ -221,7 +225,7 @@ void setup(void)
 #ifdef mxDebug
 	uartConfig.baud_rate = DEBUGGER_SPEED;
 #else
-	uartConfig.baud_rate = 115200;		//@@ different from ESP8266
+	uartConfig.baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE;
 #endif
 	uartConfig.data_bits = UART_DATA_8_BITS;
 	uartConfig.parity = UART_PARITY_DISABLE;
