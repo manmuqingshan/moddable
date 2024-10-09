@@ -57,7 +57,8 @@ enum {
 	cxQuantifierLazyLoop,
 	cxQuantifierCompletion,
 	cxWordBreakStep,
-	cxWordContinueStep
+	cxWordContinueStep,
+	cxModifiersStep
 };
 
 typedef txInteger (*txConditionalCharCase)(txMachine*, txInteger, txInteger);
@@ -300,6 +301,14 @@ typedef struct {
 
 typedef struct {
 	txTermPart;
+	txUnsigned add;
+	txUnsigned remove;
+	txTerm* disjunction;
+	txInteger sequel;
+} txModifiers;
+
+typedef struct {
+	txTermPart;
 	txTerm* term;
 	txInteger min;
 	txInteger max;
@@ -374,8 +383,8 @@ static txCaptureName* fxCaptureNameGet(txPatternParser* parser, txString string)
 static void fxCaptureNameParse(txPatternParser* parser, txInteger* length);
 static void fxCaptureNameParticipate(txPatternParser* parser, txCapture* capture);
 static txCaptureName* fxCaptureNamePut(txPatternParser* parser, txString string);
-
 static void* fxDisjunctionParse(txPatternParser* parser, txInteger character);
+static void* fxModifiersParse(txPatternParser* parser);
 static void* fxQuantifierParse(txPatternParser* parser, void* term, txInteger captureIndex);
 static txBoolean fxQuantifierParseBrace(txPatternParser* parser, txInteger* min, txInteger* max);
 static txBoolean fxQuantifierParseDigits(txPatternParser* parser, txInteger* result);
@@ -389,6 +398,7 @@ static void fxDisjunctionMeasure(txPatternParser* parser, void* it, txInteger di
 static void fxEmptyMeasure(txPatternParser* parser, void* it, txInteger direction);
 static void fxLineBeginMeasure(txPatternParser* parser, void* it, txInteger direction);
 static void fxLineEndMeasure(txPatternParser* parser, void* it, txInteger direction);
+static void fxModifiersMeasure(txPatternParser* parser, void* it, txInteger direction);
 static void fxQuantifierMeasure(txPatternParser* parser, void* it, txInteger direction);
 static void fxSequenceMeasure(txPatternParser* parser, void* it, txInteger direction);
 static void fxWordBreakMeasure(txPatternParser* parser, void* it, txInteger direction);
@@ -402,6 +412,7 @@ static void fxDisjunctionCode(txPatternParser* parser, void* it, txInteger direc
 static void fxEmptyCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel);
 static void fxLineBeginCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel);
 static void fxLineEndCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel);
+static void fxModifiersCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel);
 static void fxQuantifierCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel);
 static void fxSequenceCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel);
 static void fxWordBreakCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel);
@@ -429,6 +440,7 @@ static void fxPatternParserTerminate(txPatternParser* parser);
 #define mxCaptureCompletionSize mxTermStepSize + mxIndexSize + mxIndexSize
 #define mxCaptureReferenceStepSize mxTermStepSize + mxIndexSize + mxIndexSize
 #define mxDisjunctionStepSize mxTermStepSize + mxStepSize
+#define mxModifiersStepSize mxTermStepSize + sizeof(txInteger)
 #define mxQuantifierStepSize mxTermStepSize + mxIndexSize + (2 * sizeof(txInteger))
 #define mxQuantifierLoopSize mxTermStepSize + mxIndexSize + mxStepSize + mxIndexSize + mxIndexSize
 #define mxQuantifierCompletionSize mxTermStepSize + mxIndexSize + mxStepSize + mxIndexSize + mxIndexSize
@@ -439,6 +451,7 @@ enum {
 	mxInvalidEscape,
 	mxInvalidFlags,
 	mxInvalidGroup,
+	mxInvalidModifiers,
 	mxInvalidName,
 	mxInvalidPattern,
 	mxInvalidQuantifier,
@@ -459,6 +472,7 @@ static const txString gxErrors[mxErrorCount] ICACHE_XS6RO_ATTR = {
 	"invalid escape",
 	"invalid flags",
 	"invalid group",
+	"invalid modifiers",
 	"invalid name",
 	"invalid pattern",
 	"invalid quantifier",
@@ -498,6 +512,7 @@ struct sxStateData {
 	txStateData* nextState;
 	txInteger step;
 	txInteger offset;
+	txUnsigned flags;
 	txCaptureData captures[1];
 };
 
@@ -505,10 +520,10 @@ static txInteger fxFindCharacter(txString input, txInteger offset, txInteger dir
 static txInteger fxGetCharacter(txString input, txInteger offset, txInteger flags);
 static txBoolean fxMatchCharacter(txInteger* characters, txInteger character);
 static txStateData* fxPopStates(txMachine* the, txStateData* fromState, txStateData* toState);
-static txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step, txInteger offset, txCaptureData* captures, txInteger captureCount);
+static txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step, txInteger offset, txUnsigned flags, txCaptureData* captures, txInteger captureCount);
 
 #ifdef mxTrace
-	static txString gxStepNames[cxWordContinueStep + 1] = {
+	static txString gxStepNames[cxModifiersStep + 1] = {
 		"MatchStep",
 		"AssertionStep",
 		"AssertionCompletion",
@@ -531,7 +546,8 @@ static txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteg
 		"QuantifierLazyLoop",
 		"QuantifierCompletion",
 		"WordBreakStep",
-		"WordContinueStep"
+		"WordContinueStep",
+		"ModifiersStep"
 	};
 #endif
 
@@ -1516,6 +1532,53 @@ void* fxDisjunctionParse(txPatternParser* parser, txInteger character)
 	return result;
 }
 
+void* fxModifiersParse(txPatternParser* parser)
+{
+	txUnsigned add = 0, remove = 0, flags = parser->flags;
+	txModifiers* self = fxPatternParserCreateTerm(parser, sizeof(txModifiers), fxModifiersMeasure);;
+	while (parser->character != ':') {
+		if (parser->character == '-') {
+			fxPatternParserNext(parser);
+			break;
+		}
+		if ((parser->character == 'i') && !(add & XS_REGEXP_I))
+			add |= XS_REGEXP_I;
+		else if ((parser->character == 'm') && !(add & XS_REGEXP_M))
+			add |= XS_REGEXP_M;
+		else if ((parser->character == 's') && !(add & XS_REGEXP_S))
+			add |= XS_REGEXP_S;
+		else 
+			goto bail;
+		fxPatternParserNext(parser);
+	}
+	while (parser->character != ':') {
+		if ((parser->character == 'i') && !(remove & XS_REGEXP_I))
+			remove |= XS_REGEXP_I;
+		else if ((parser->character == 'm') && !(remove & XS_REGEXP_M))
+			remove |= XS_REGEXP_M;
+		else if ((parser->character == 's') && !(remove & XS_REGEXP_S))
+			remove |= XS_REGEXP_S;
+		else 
+			goto bail;
+		fxPatternParserNext(parser);
+	}
+	if (!add && !remove)
+		goto bail;
+	if (add & remove)
+		goto bail;
+	parser->flags = (flags | add) & ~remove;
+	fxPatternParserNext(parser);
+	self->add = add;
+	self->remove = remove;
+	self->disjunction = fxDisjunctionParse(parser, ')');
+	fxPatternParserNext(parser);
+	parser->flags = flags;
+	return self;
+bail:
+	fxPatternParserError(parser, gxErrors[mxInvalidModifiers]);
+	return C_NULL;
+}
+
 void* fxQuantifierParse(txPatternParser* parser, void* term, txInteger captureIndex)
 {
 	txInteger min, max;
@@ -1745,7 +1808,7 @@ void* fxSequenceParse(txPatternParser* parser, txInteger character)
 					}
 				}
 				else {
-					fxPatternParserError(parser, gxErrors[mxInvalidGroup]);
+					current = fxModifiersParse(parser);
 				}
 			}
 			else {
@@ -1913,6 +1976,20 @@ void fxLineEndMeasure(txPatternParser* parser, void* it, txInteger direction)
 	self->step = parser->size;
 	parser->size += mxTermStepSize;
 	self->dispatch.code = fxLineEndCode;
+}
+
+void fxModifiersMeasure(txPatternParser* parser, void* it, txInteger direction)
+{
+	txModifiers* self = it;
+	txUnsigned flags = parser->flags;
+	parser->flags = (flags | self->add) & ~self->remove;
+	self->step = parser->size;
+	parser->size += mxModifiersStepSize;
+	(*self->disjunction->dispatch.measure)(parser, self->disjunction, direction);
+	parser->flags = flags;
+	self->sequel = parser->size;
+	parser->size += mxModifiersStepSize;
+	self->dispatch.code = fxModifiersCode;
 }
 
 void fxQuantifierMeasure(txPatternParser* parser, void* it, txInteger direction)
@@ -2086,6 +2163,23 @@ void fxLineEndCode(txPatternParser* parser, void* it, txInteger direction, txInt
 	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
 	*buffer++ = cxLineEndStep;
 	*buffer++ = sequel;
+}
+
+void fxModifiersCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
+{
+	txModifiers* self = it;
+	txInteger* buffer = (txInteger*)(((txByte*)*(parser->code)) + self->step);
+	txUnsigned flags = parser->flags;
+	parser->flags = (flags | self->add) & ~self->remove;
+	*buffer++ = cxModifiersStep;
+	*buffer++ = self->disjunction->step;
+	*buffer++ = (txInteger)parser->flags;
+	(*self->disjunction->dispatch.code)(parser, self->disjunction, direction, self->sequel);
+	parser->flags = flags;
+	buffer = (txInteger*)(((txByte*)*(parser->code)) + self->sequel);
+	*buffer++ = cxModifiersStep;
+	*buffer++ = sequel;
+	*buffer++ = (txInteger)parser->flags;
 }
 
 void fxQuantifierCode(txPatternParser* parser, void* it, txInteger direction, txInteger sequel)
@@ -2618,7 +2712,7 @@ txStateData* fxPopStates(txMachine* the, txStateData* fromState, txStateData* to
 	return toState;
 }
 
-txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step, txInteger offset, txCaptureData* captures, txInteger captureCount)
+txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step, txInteger offset, txUnsigned flags, txCaptureData* captures, txInteger captureCount)
 {
 	txInteger size = sizeof(txStateData) + ((captureCount - 1) * sizeof(txCaptureData));
 	txStateData* state = C_NULL;
@@ -2642,6 +2736,7 @@ txStateData* fxPushState(txMachine* the, txStateData* firstState, txInteger step
 	state->nextState = firstState;
 	state->step = step;
 	state->offset = offset;
+	state->flags = flags;
 	c_memcpy(state->captures, captures, captureCount * sizeof(txCaptureData));
 	return state;
 }
@@ -2685,7 +2780,8 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 		&&cxQuantifierLazyLoop,
 		&&cxQuantifierCompletion,
 		&&cxWordBreakStep,
-		&&cxWordContinueStep
+		&&cxWordContinueStep,
+		&&cxModifiersStep,
 	};
 	register void * const *steps = gxSteps;
 #endif
@@ -2724,8 +2820,20 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						captureIndex++;
 						state = state->nextState;
 					}					
-					
-					fprintf(stderr, "\n#%d (%d) [%d,%d]", step, captureIndex, start, offset);
+					fprintf(stderr, "\n# ");
+					if (flags & XS_REGEXP_I)
+						fprintf(stderr, "i");
+					else 
+						fprintf(stderr, " ");
+					if (flags & XS_REGEXP_M)
+						fprintf(stderr, "m");
+					else 
+						fprintf(stderr, " ");
+					if (flags & XS_REGEXP_S)
+						fprintf(stderr, "s");
+					else 
+						fprintf(stderr, " ");
+					fprintf(stderr, " %d (%d) [%d,%d]", step, captureIndex, start, offset);
 					for (captureIndex = 1; captureIndex < captureCount; captureIndex++) 
 						fprintf(stderr, " [%d,%d]", captures[captureIndex].from, captures[captureIndex].to);
 					fprintf(stderr, " %s", gxStepNames[which]);
@@ -2777,7 +2885,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						assertion->offset = offset;
 						assertion->firstState = firstState;
 						sequel = *pointer;
-						firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
+						firstState = fxPushState(the, firstState, sequel, offset, flags, captures, captureCount);
 						if (!firstState)
 							return 0;
 						mxBreak;
@@ -2930,7 +3038,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 					mxCase(cxDisjunctionStep):
 						step = *pointer++;
 						sequel = *pointer;
-						firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
+						firstState = fxPushState(the, firstState, sequel, offset, flags, captures, captureCount);
 						if (!firstState)
 							return 0;
 						mxBreak;
@@ -2985,7 +3093,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							mxBreak;
 						}
 						if (quantifier->min == 0) {
-							firstState = fxPushState(the, firstState, sequel, offset, captures, captureCount);
+							firstState = fxPushState(the, firstState, sequel, offset, flags, captures, captureCount);
 							if (!firstState)
 								return 0;
 						}
@@ -3014,7 +3122,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 							mxBreak;
 						}
 						if (quantifier->min == 0) {
-							firstState = fxPushState(the, firstState, step, offset, captures, captureCount);
+							firstState = fxPushState(the, firstState, step, offset, flags, captures, captureCount);
 							if (!firstState)
 								return 0;
 							step = sequel;
@@ -3063,10 +3171,18 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						if (e == f)
 							mxBreak;
 						goto mxPopState;
-				
+					mxCase(cxModifiersStep):
+						step = *pointer++;
+						flags = *pointer;
+						#ifdef mxTrace 
+							fprintf(stderr, " #%8.8X", flags);
+						#endif
+						mxBreak;
+			
 					mxPopState:
 						if (!firstState) {
 							step = 0;
+							flags = code[0];
 							mxBreak;
 						}
 						#ifdef mxTrace 
@@ -3074,6 +3190,7 @@ txBoolean fxMatchRegExp(void* the, txInteger* code, txInteger* data, txString su
 						#endif
 						step = firstState->step;
 						offset = firstState->offset;
+						flags = firstState->flags;
 						c_memcpy(captures, firstState->captures, captureCount * sizeof(txCaptureData));
 						if (firstState->the) {
 							firstState = firstState->nextState;
