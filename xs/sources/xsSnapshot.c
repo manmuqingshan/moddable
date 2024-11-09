@@ -90,12 +90,17 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #else
 	#define mxUint8ArrayBase64Additions 0
 #endif
+#if mxModuleStuff
+	#define mxModuleStuffAdditions 1
+#else
+	#define mxModuleStuffAdditions 0
+#endif
 #if mxECMAScript2025
 	#define mxECMAScript2025Additions 8
 #else
 	#define mxECMAScript2025Additions 0
 #endif
-#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxECMAScript2025Additions)
+#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions)
 
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
@@ -642,7 +647,10 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Uint8Array_prototype_setFromBase64,
 	fx_Uint8Array_prototype_setFromHex,
 	fx_Uint8Array_prototype_toBase64,
-	fx_Uint8Array_prototype_toHex
+	fx_Uint8Array_prototype_toHex,
+#endif
+#if mxModuleStuff
+	fx_ModuleStuff,
 #endif
 #if mxECMAScript2025
 	fx_Error_prototype_set_stack,
