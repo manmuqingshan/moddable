@@ -1253,6 +1253,7 @@ enum {
 	_isSubsetOf,
 	_isSupersetOf,
 	_symmetricDifference,
+	_try,
 	_union,
 #endif
 	XS_ID_COUNT

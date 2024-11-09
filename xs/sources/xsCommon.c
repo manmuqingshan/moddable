@@ -1834,6 +1834,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"isSubsetOf",
 	"isSupersetOf",
 	"symmetricDifference",
+	"try",
 	"union",
 #endif
 };
