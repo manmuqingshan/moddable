@@ -141,13 +141,14 @@ static void fxLoadHook(txMachine* the);
 static void fxRunProgramFileInCompartment(txMachine* the, txString path, txUnsigned flags);
 static void fxRunModuleFileInCompartment(txMachine* the, txString path);
 
-#define mxFeaturesCount 14
+#define mxFeaturesCount 15
 static char* gxFeatures[mxFeaturesCount] = { 
 	"Array.fromAsync",
 	"Atomics.pause",
 	"FinalizationRegistry.prototype.cleanupSome",
  	"Float16Array",
  	"Math.sumPrecise",
+ 	"RegExp.escape",
  	"ShadowRealm",
 	"Temporal",
 	"arbitrary-module-namespace-names",
