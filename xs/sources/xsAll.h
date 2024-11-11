@@ -1641,6 +1641,7 @@ extern void fxConstructArrayBufferResult(txMachine* the, txSlot* constructor, tx
 extern txInteger fxArgToByteLength(txMachine* the, txInteger argi, txInteger length);
 extern txS8 fxArgToSafeByteLength(txMachine* the, txInteger argi, txInteger length);
 extern txInteger fxGetDataViewSize(txMachine* the, txSlot* view, txSlot* buffer);
+extern txBoolean fxIsDataViewOutOfBound(txMachine* the, txSlot* view, txSlot* buffer);
 
 /* xsAtomics.c */
 extern void fxInt8Add(txMachine* the, txSlot* host, txInteger offset, txSlot* slot, int endian);

@@ -858,6 +858,24 @@ txInteger fxGetDataViewSize(txMachine* the, txSlot* view, txSlot* buffer)
 	return size;
 }
 
+txBoolean fxIsDataViewOutOfBound(txMachine* the, txSlot* view, txSlot* buffer)
+{
+	txInteger size = view->value.dataView.size;
+	txSlot* arrayBuffer = buffer->value.reference->next;
+	txSlot* bufferInfo = arrayBuffer->next;
+	if (arrayBuffer->value.arrayBuffer.address == C_NULL)
+		return 1;
+	if (bufferInfo->value.bufferInfo.maxLength >= 0) {
+		txInteger offset = view->value.dataView.offset;
+		txInteger byteLength = bufferInfo->value.bufferInfo.length;
+		if (offset > byteLength)
+			return 1;
+		if ((size > 0) && (offset + size > byteLength))
+			return 1;
+	}
+	return 0;
+}
+
 txSlot* fxNewDataViewInstance(txMachine* the)
 {
 	txSlot* instance;
