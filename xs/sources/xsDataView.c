@@ -1314,9 +1314,8 @@ txBoolean fxTypedArrayPreventExtensions(txMachine* the, txSlot* instance)
 	txSlot* buffer = view->next;
 	txSlot* arrayBuffer = buffer->value.reference->next;
 	txSlot* bufferInfo = arrayBuffer->next;
-	if (view->value.dataView.size < 0)
-		return 0;
-	if ((arrayBuffer->kind == XS_ARRAY_BUFFER_KIND) && (bufferInfo->value.bufferInfo.maxLength >= 0))
+	txInteger size = fxGetDataViewSize(the, view, buffer);
+	if ((size > 0) && (arrayBuffer->kind == XS_ARRAY_BUFFER_KIND) && (bufferInfo->value.bufferInfo.maxLength >= 0))
 		return 0;
 	return fxOrdinaryPreventExtensions(the, instance);
 }
