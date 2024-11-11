@@ -3297,8 +3297,8 @@ static void fxUint8ArrayFromHex(txMachine* the, txU1* srcStart, txU1* dstStart, 
 {
 #define mxFromHex(X) \
 	if (('0' <= X) && (X <= '9')) X = X - '0'; \
-	else if (('A' <= X) && (X <= 'Z')) X = X - 'A' + 10; \
-	else if (('a' <= X) && (X <= 'z')) X =  X - 'a' + 10; \
+	else if (('A' <= X) && (X <= 'F')) X = X - 'A' + 10; \
+	else if (('a' <= X) && (X <= 'f')) X =  X - 'a' + 10; \
 	else mxSyntaxError("invalid string")
 
 	txU1* src = srcStart;
@@ -3318,7 +3318,7 @@ static void fxUint8ArrayFromHex(txMachine* the, txU1* srcStart, txU1* dstStart, 
 	*written = (txSize)(dst - dstStart);
 }
 
-static void fxUint8ArrayGetBase64Options(txMachine* the, txInteger argi, txU1** alphabet, txInteger* lastChunkHandling)
+static void fxUint8ArrayGetBase64Options(txMachine* the, txInteger argi, txU1** alphabet, txInteger* lastChunkHandling, txBoolean* omitPadding)
 {
 	if ((mxArgc > argi) && !mxIsUndefined(mxArgv(argi))) {
 		if (!mxIsReference(mxArgv(argi)))
@@ -3349,6 +3349,13 @@ static void fxUint8ArrayGetBase64Options(txMachine* the, txInteger argi, txU1** 
 			}
 			mxPop();
 		}
+		if (omitPadding) {
+			mxPushSlot(mxArgv(argi));
+			mxGetID(mxID(_omitPadding));
+			fxToBoolean(the, the->stack);
+			*omitPadding = the->stack->value.boolean;
+			mxPop();
+		}
 	}
 }
 
@@ -3362,7 +3369,7 @@ void fx_Uint8Array_fromBase64(txMachine* the)
 	txU1* dst;
 	if ((mxArgc < 1) || !mxIsStringPrimitive(mxArgv(0)))
 		mxTypeError("string: not a string");
-	fxUint8ArrayGetBase64Options(the, 1, &alphabet, &lastChunkHandling);
+	fxUint8ArrayGetBase64Options(the, 1, &alphabet, &lastChunkHandling, NULL);
 	srcSize = (txSize)c_strlen(mxArgv(0)->value.string);
 	dstSize = (((srcSize + 3) / 4) * 3);
 	mxPush(mxUint8ArrayConstructor);
@@ -3430,7 +3437,7 @@ void fx_Uint8Array_prototype_setFromBase64(txMachine* the)
 		mxTypeError("this: not a Uint8Array instance");
 	if ((mxArgc < 1) || !mxIsStringPrimitive(mxArgv(0)))
 		mxTypeError("string: not a string");
-	fxUint8ArrayGetBase64Options(the, 1, &alphabet, &lastChunkHandling);
+	fxUint8ArrayGetBase64Options(the, 1, &alphabet, &lastChunkHandling, NULL);
 	srcSize = (txSize)c_strlen(mxArgv(0)->value.string);
 	dstSize = fxCheckDataViewSize(the, view, buffer, XS_MUTABLE);
 	src = (txU1*)(mxArgv(0)->value.string);
@@ -3479,6 +3486,7 @@ void fx_Uint8Array_prototype_toBase64(txMachine* the)
 	txSlot* view = dispatch->next;
 	txSlot* buffer = view->next;
 	txU1* alphabet = (txU1*)gxBase64Alphabet;
+	txBoolean omitPadding = 0;
 	txU1* src;
 	txU1* dst;
 	txSize srcSize;
@@ -3486,7 +3494,7 @@ void fx_Uint8Array_prototype_toBase64(txMachine* the)
 	txU1 a, b, c;
 	if (dispatch->value.typedArray.dispatch->constructorID != mxID(_Uint8Array))
 		mxTypeError("this: not a Uint8Array instance");
-	fxUint8ArrayGetBase64Options(the, 0, &alphabet, C_NULL);
+	fxUint8ArrayGetBase64Options(the, 0, &alphabet, C_NULL, &omitPadding);
 	srcSize = fxCheckDataViewSize(the, view, buffer, XS_IMMUTABLE);
 	if (srcSize > (((0x7FFFFFFF >> 2) * 3) - 2))
 		fxAbort(the, XS_NOT_ENOUGH_MEMORY_EXIT);
@@ -3510,14 +3518,17 @@ void fx_Uint8Array_prototype_toBase64(txMachine* the)
 		*dst++ = c_read8(alphabet + ((a & 0xfc) >> 2));
 		*dst++ = c_read8(alphabet + (((a & 0x3) << 4) | ((b & 0xf0) >> 4)));
 		*dst++ = c_read8(alphabet + ((b & 0xf) << 2));
-		*dst++ = '=';
+		if (!omitPadding)
+			*dst++ = '=';
 	}
 	else if (srcSize == 1) {
 		a = c_read8(src++);
 		*dst++ = c_read8(alphabet + ((a & 0xfc) >> 2));
 		*dst++ = c_read8(alphabet + ((a & 0x3) << 4));
-		*dst++ = '=';
-		*dst++ = '=';
+		if (!omitPadding) {
+			*dst++ = '=';
+			*dst++ = '=';
+		}
 	}
 	*dst++ = 0;
 }

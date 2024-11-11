@@ -1824,6 +1824,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"fromBase64",
 	"fromHex",
 	"lastChunkHandling",
+	"omitPadding",
 	"read",
 	"setFromBase64",
 	"setFromHex",
