@@ -698,15 +698,15 @@ void fx_ArrayBuffer_prototype_concat(txMachine* the)
 void fx_ArrayBuffer_prototype_resize(txMachine* the)
 {
 	/* txSlot* instance = */ fxCheckArrayBufferInstance(the, mxThis);
+	txInteger newByteLength = fxArgToByteLength(the, 0, 0);
 	txSlot* arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
 	txSlot* bufferInfo = arrayBuffer->next;
-	txInteger maxByteLength, oldByteLength, newByteLength;
+	txInteger maxByteLength, oldByteLength;
 	txByte* chunk;
 	maxByteLength = bufferInfo->value.bufferInfo.maxLength;
 	if (maxByteLength < 0)
 		mxTypeError("not resizable");
 	oldByteLength = bufferInfo->value.bufferInfo.length;
-	newByteLength = fxArgToByteLength(the, 0, 0);
 	if (newByteLength > maxByteLength)
 		mxRangeError("newLength > maxByteLength");
 	arrayBuffer = fxCheckArrayBufferDetached(the, mxThis, XS_MUTABLE);
@@ -1167,31 +1167,21 @@ void fxTypedArrayGetter(txMachine* the)
 void fxTypedArraySetter(txMachine* the)
 {
 	txSlot* instance = fxToInstance(the, mxThis);
-	txSlot* dispatch;
 	while (instance) {
 		if (instance->flag & XS_EXOTIC_FLAG) {
-			dispatch = instance->next;
-			if (dispatch->ID == XS_TYPED_ARRAY_BEHAVIOR)
+			if (instance->next->ID == XS_TYPED_ARRAY_BEHAVIOR)
 				break;
 		}
 		instance = fxGetPrototype(the, instance);
 	}
 	if (instance) {
-		txSlot* slot = mxArgv(0);
+		txSlot* value = mxArgv(0);
 		txID id = the->scratch.value.at.id;
 		txIndex index = the->scratch.value.at.index;
-		txSlot* view = dispatch->next;
-		txSlot* buffer = view->next;
-		txU2 shift = dispatch->value.typedArray.dispatch->shift;
-		txSlot* arrayBuffer = buffer->value.reference->next;
-		txIndex length;
-		dispatch->value.typedArray.dispatch->coerce(the, slot);
-		if (arrayBuffer->flag & XS_DONT_SET_FLAG)
-			mxTypeError("read-only buffer");
-		length = fxGetDataViewSize(the, view, buffer) >> shift;
-		if ((!id) && (index < length)) {
-			(*dispatch->value.typedArray.dispatch->setter)(the, arrayBuffer, view->value.dataView.offset + (index << shift), slot, EndianNative);
-		}
+        if (!fxTypedArraySetPropertyValue(the, instance, id, index, value, mxThis)) {
+            if (the->frame->next->flag & XS_STRICT_FLAG)
+				mxTypeError("not extensible or not writable");
+        }
 	}
 }
 
@@ -1828,13 +1818,25 @@ void fx_TypedArray_prototype_copyWithin(txMachine* the)
 	txInteger start = (txInteger)fxArgToIndex(the, 1, 0, length);
 	txInteger end = (txInteger)fxArgToIndex(the, 2, length, length);
 	txInteger count = end - start;
-	fxCheckArrayBufferDetached(the, buffer, XS_MUTABLE);
 	if (count > length - target)
 		count = length - target;
 	if (count > 0) {
-		txByte* address = buffer->value.reference->next->value.arrayBuffer.address + view->value.dataView.offset;
-		c_memmove(address + (target * delta), address + (start * delta), count * delta);
-		mxMeterSome((txU4)count * 2);
+		txByte* address = buffer->value.reference->next->value.arrayBuffer.address;
+		txInteger offset = view->value.dataView.offset;
+		if (fxIsDataViewOutOfBound(the, view, buffer))
+			mxTypeError("out of bound buffer");
+		target = offset + (target * delta);
+		start = offset + (start * delta);
+		end = offset + fxCheckDataViewSize(the, view, buffer, XS_MUTABLE);
+		count = count * delta;
+		if (count > end - target)
+			count = end - target;
+		if (count > end - start)
+			count = end - start;
+		if (count > 0) {
+			c_memmove(address + target, address + start, count);
+			mxMeterSome((txU4)count * 2);
+		}
 	}
 	mxResult->kind = mxThis->kind;
 	mxResult->value = mxThis->value;
