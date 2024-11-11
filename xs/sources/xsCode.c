@@ -1690,6 +1690,7 @@ txInteger fxScopeCodeSpecifierNodes(txScope* self, txCoder* coder)
 		if (node->flags & mxDeclareNodeUseClosureFlag) {
 			txSpecifierNode* specifier = node->importSpecifier;
 			txInteger index = 3;
+			txBoolean flag = 0;
 			if (node->symbol)
 				fxCoderAddSymbol(coder, 1, XS_CODE_SYMBOL, node->symbol);
 			else
@@ -1699,6 +1700,8 @@ txInteger fxScopeCodeSpecifierNodes(txScope* self, txCoder* coder)
 					fxCoderAddLine(coder, 0, XS_CODE_LINE, (txNode*)specifier);
 				}
 				fxStringNodeCode(specifier->from, coder);
+				if (specifier->with)
+					flag = 1;
 				if (specifier->symbol)
 					fxCoderAddSymbol(coder, 1, XS_CODE_SYMBOL, specifier->symbol);
 				else
@@ -1725,7 +1728,10 @@ txInteger fxScopeCodeSpecifierNodes(txScope* self, txCoder* coder)
 				specifier = specifier->nextSpecifier;
 			}
 			fxCoderAddInteger(coder, 1, XS_CODE_INTEGER_1, index);
-			fxCoderAddByte(coder, 0 - index, XS_CODE_TRANSFER);
+			if (flag)
+				fxCoderAddByte(coder, 0 - index, XS_CODE_TRANSFER_JSON);
+			else
+				fxCoderAddByte(coder, 0 - index, XS_CODE_TRANSFER);
 			count++;
 		}
 		node = node->nextDeclareNode;
@@ -3565,10 +3571,14 @@ void fxImportNodeCode(void* it, void* param)
 void fxImportCallNodeCode(void* it, void* param)
 {
 	txCoder* coder = param;
-	txStatementNode* self = it;
+	txImportCallNode* self = it;
 	fxNodeDispatchCode(self->expression, param);
+	if (self->withExpression)
+		fxNodeDispatchCode(self->withExpression, param);
+	else
+		fxCoderAddByte(param, 1, XS_CODE_UNDEFINED);
 	coder->importFlag = 1;
-	fxCoderAddByte(param, 0, XS_CODE_IMPORT);
+	fxCoderAddByte(param, -1, XS_CODE_IMPORT);
 }
 
 void fxImportMetaNodeCode(void* it, void* param)
@@ -3816,6 +3826,8 @@ void fxModuleNodeCode(void* it, void* param)
 	
 	count = 2 + fxScopeCodeSpecifierNodes(self->scope, coder);
 	fxCoderAddInteger(coder, 1, XS_CODE_INTEGER_1, count);
+	if (!(self->flags & mxStrictFlag))
+		flag |= XS_JSON_MODULE_FLAG;
 	if (coder->importFlag)
 		flag |= XS_IMPORT_FLAG;
 	if (coder->importMetaFlag)

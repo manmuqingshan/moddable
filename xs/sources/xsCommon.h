@@ -423,6 +423,7 @@ enum {
 	XS_CODE_USED_2,
 	XS_CODE_USING,
 	XS_CODE_USING_ASYNC,
+	XS_CODE_TRANSFER_JSON,
 	XS_CODE_COUNT
 };
 
@@ -437,6 +438,7 @@ enum {
 	XS_METHOD_FLAG = 16,
 	XS_GETTER_FLAG = 32,
 	XS_SETTER_FLAG = 64,
+	XS_JSON_MODULE_FLAG = 16,
 	XS_IMPORT_FLAG = 32,
 	XS_IMPORT_META_FLAG = 64,
 };
@@ -458,6 +460,7 @@ enum {
 	mxFieldFlag = 1 << 15,
 	mxFunctionFlag = 1 << 16,
 	mxGeneratorFlag = 1 << 21,
+	mxJSONModuleFlag = 1 << 22,
 };
 
 enum {
@@ -1252,8 +1255,10 @@ enum {
 	_isDisjointFrom,
 	_isSubsetOf,
 	_isSupersetOf,
+	_options,
 	_symmetricDifference,
 	_try,
+	_type,
 	_union,
 #endif
 	XS_ID_COUNT

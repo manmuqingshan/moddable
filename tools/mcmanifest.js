@@ -1369,7 +1369,7 @@ class ModulesRule extends Rule {
 			return;
 		if (tool.dataFiles.already[source])
 			return;
-		if ((parts.extension == ".js") || (parts.extension == ".mjs"))
+		if ((parts.extension == ".js") || (parts.extension == ".mjs") || (parts.extension == ".json"))
 			this.appendFile(tool.jsFiles, target + ".xsb", source, include);
 		else if (parts.extension == ".c")
 			this.appendFile(tool.cFiles, parts.name + ".c.o", source, include);

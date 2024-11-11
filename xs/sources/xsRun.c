@@ -657,6 +657,7 @@ void fxRunID(txMachine* the, txSlot* generator, txInteger count)
 		&&XS_CODE_USED_2,
 		&&XS_CODE_USING,
 		&&XS_CODE_USING_ASYNC,
+		&&XS_CODE_TRANSFER_JSON,
 	};
 	register void * const *bytes = gxBytes;
 #endif
@@ -4136,7 +4137,13 @@ XS_CODE_JUMP:
 			mxBreak;
 		mxCase(XS_CODE_TRANSFER)
 			mxSaveState;
-			fxPrepareTransfer(the);
+			fxPrepareTransfer(the, XS_NO_FLAG);
+			mxRestoreState;
+            mxNextCode(1);
+			mxBreak;
+		mxCase(XS_CODE_TRANSFER_JSON)
+			mxSaveState;
+			fxPrepareTransfer(the, XS_JSON_MODULE_FLAG);
 			mxRestoreState;
             mxNextCode(1);
 			mxBreak;

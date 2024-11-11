@@ -1918,7 +1918,7 @@ extern void fxExecuteModulesRejected(txMachine* the);
 extern void fxLoadModulesFulfilled(txMachine* the);
 extern void fxLoadModulesRejected(txMachine* the);
 extern void fxPrepareModule(txMachine* the, txFlag flag);
-extern void fxPrepareTransfer(txMachine* the);
+extern void fxPrepareTransfer(txMachine* the, txFlag flag);
 extern void fxResolveModule(txMachine* the, txSlot* module, txID moduleID, txScript* script, void* data, txDestructor destructor);
 extern void fxRunImport(txMachine* the, txSlot* realm, txSlot* referrer);
 extern void fxRunImportMeta(txMachine* the, txSlot* module);
@@ -1935,6 +1935,7 @@ mxExport void fx_ModuleSource(txMachine* the);
 mxExport void fx_ModuleSource_prototype_get_bindings(txMachine* the);
 mxExport void fx_ModuleSource_prototype_get_needsImport(txMachine* the);
 mxExport void fx_ModuleSource_prototype_get_needsImportMeta(txMachine* the);
+mxExport void fx_ModuleSource_prototype_get_options(txMachine* the);
 
 #if mxModuleStuff
 mxExport void fx_ModuleStuff(txMachine* the);

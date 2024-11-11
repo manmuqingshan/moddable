@@ -141,7 +141,7 @@ static void fxLoadHook(txMachine* the);
 static void fxRunProgramFileInCompartment(txMachine* the, txString path, txUnsigned flags);
 static void fxRunModuleFileInCompartment(txMachine* the, txString path);
 
-#define mxFeaturesCount 10
+#define mxFeaturesCount 8
 static char* gxFeatures[mxFeaturesCount] = { 
 	"Array.fromAsync",
 	"FinalizationRegistry.prototype.cleanupSome",
@@ -150,9 +150,7 @@ static char* gxFeatures[mxFeaturesCount] = {
 	"arbitrary-module-namespace-names",
 	"decorators",
 	"import-assertions",
-	"import-attributes",
-	"iterator-helpers",
-	"json-modules",
+	"iterator-helpers"
 };
 
 int main262(int argc, char* argv[]) 

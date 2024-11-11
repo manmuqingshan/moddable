@@ -275,6 +275,7 @@ struct sxExportNode {
 	mxNodePart;
 	txNodeList* specifiers;
 	txNode* from;
+	txNode* with;
 };
 
 typedef struct {
@@ -336,7 +337,14 @@ struct sxImportNode {
 	mxNodePart;
 	txNodeList* specifiers;
 	txNode* from;
+	txNode* with;
 };
+
+typedef struct {
+	mxNodePart;
+	txNode* expression;
+	txNode* withExpression;
+} txImportCallNode;
 
 typedef struct {
 	mxNodePart;
@@ -483,6 +491,7 @@ struct sxSpecifierNode {
 	txSymbol* symbol;
 	txSymbol* asSymbol;
 	txNode* from;
+	txNode* with;
 	txDeclareNode* declaration;
 	txSpecifierNode* nextSpecifier;
 };
@@ -676,6 +685,7 @@ struct sxParser {
 	txSymbol* idSymbol;
 	txSymbol* includeSymbol;
 	txSymbol* InfinitySymbol;
+	txSymbol* jsonSymbol;
 	txSymbol* lengthSymbol;
 	txSymbol* letSymbol;
 	txSymbol* metaSymbol;
@@ -898,6 +908,7 @@ enum {
 	/* mxFieldFlag = 1 << 15, */
 	/* mxFunctionFlag = 1 << 16, */
 	/* mxGeneratorFlag = 1 << 21, */
+	/* mxJSONModuleFlag = 1 << 22, */
 	mxParserFlags = mxCFlag | mxDebugFlag | mxProgramFlag,
 
 
@@ -968,6 +979,7 @@ extern void fxLookAheadTwice(txParser* parser);
 extern void fxProgram(txParser* parser);
 extern void fxModule(txParser* parser);
 extern void fxJSONValue(txParser* parser);
+extern void fxJSONModule(txParser* parser);
 
 /* xsTree.c */
 
