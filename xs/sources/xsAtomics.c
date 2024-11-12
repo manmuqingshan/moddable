@@ -324,30 +324,34 @@ void fxPushAtomicsValue(txMachine* the, int i, txID id)
 void fx_SharedArrayBuffer(txMachine* the)
 {
 	txSlot* instance;
-	txInteger byteLength;
-	txInteger maxByteLength = -1;
+	txS8 byteLength;
+	txS8 maxByteLength = -1;
 	txSlot* property;
 	if (mxIsUndefined(mxTarget))
 		mxTypeError("call: SharedArrayBuffer");
-	mxPushSlot(mxTarget);
-	fxGetPrototypeFromConstructor(the, &mxSharedArrayBufferPrototype);
-	byteLength = fxCheckAtomicsIndex(the, 0, 0x7FFFFFFF);
+	byteLength = fxArgToSafeByteLength(the, 0, 0);
 	if ((mxArgc > 1) && mxIsReference(mxArgv(1))) {
 		mxPushSlot(mxArgv(1));
 		mxGetID(mxID(_maxByteLength));
 		mxPullSlot(mxArgv(1));
-		maxByteLength = fxArgToByteLength(the, 1, -1);
+		maxByteLength = fxArgToSafeByteLength(the, 1, -1);
 	}
 	if (maxByteLength >= 0) {
 		if (byteLength > maxByteLength)
 			mxRangeError("byteLength > maxByteLength");
 	}
+	mxPushSlot(mxTarget);
+	fxGetPrototypeFromConstructor(the, &mxSharedArrayBufferPrototype);
 	instance = fxNewSlot(the);
 	instance->kind = XS_INSTANCE_KIND;
 	instance->value.instance.garbage = C_NULL;
 	instance->value.instance.prototype = the->stack->value.reference;
 	the->stack->value.reference = instance;
 	the->stack->kind = XS_REFERENCE_KIND;
+	if (byteLength > 0x7FFFFFFF)
+		mxRangeError("byteLength too big");
+	if (maxByteLength > 0x7FFFFFFF)
+		mxRangeError("maxByteLength too big");
 	property = instance->next = fxNewSlot(the);
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOST_KIND;
