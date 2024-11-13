@@ -1258,8 +1258,11 @@ txSlot* fxEnvironmentSetProperty(txMachine* the, txSlot* instance, txID id, txIn
 			if (result->ID == id) {
 				if (result->kind == XS_CLOSURE_KIND) {
 					result = result->value.closure;
-					if (result->flag & XS_DONT_SET_FLAG)
+					if (result->flag & XS_DONT_SET_FLAG) {
+						if (result->flag & XS_DONT_ENUM_FLAG)
+							return C_NULL;
 						mxDebugID(XS_TYPE_ERROR, "set %s: const", id);
+					}
 #if mxAliasInstance
 					else {
 						txID alias = result->ID;

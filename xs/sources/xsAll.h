@@ -293,6 +293,7 @@ typedef union {
 	struct { txSlot* slot; txInspectorNameLink* link; } instanceInspector;
 	struct { txSlot* closure; txSlot* module; } export;
 	struct { txSlot* check; txSlot* first; } private;
+	struct { txSlot* reference; txSlot* prototype; } super;
 	
 	txID* IDs;
 } txValue;
@@ -2670,6 +2671,15 @@ enum {
 	mxArrayIteratorFunctionIndex,
 	mxOrdinaryToPrimitiveFunctionStackIndex,
 	mxCompartmentGlobalStackIndex,
+	
+#if mxExplicitResourceManagement	
+	mxSuppressedErrorPrototypeStackIndex,
+	mxDisposableStackPrototypeStackIndex,
+	mxAsyncDisposableStackPrototypeStackIndex,
+#endif
+#if mxModuleStuff	
+	mxModuleStuffPrototypeStackIndex,
+#endif
 
 	mxEmptyCodeStackIndex,
 	mxEmptyStringStackIndex,
@@ -2683,15 +2693,6 @@ enum {
 	mxStringStringStackIndex,
 	mxSymbolStringStackIndex,
 	mxUndefinedStringStackIndex,
-	
-#if mxExplicitResourceManagement	
-	mxSuppressedErrorPrototypeStackIndex,
-	mxDisposableStackPrototypeStackIndex,
-	mxAsyncDisposableStackPrototypeStackIndex,
-#endif
-#if mxModuleStuff	
-	mxModuleStuffPrototypeStackIndex,
-#endif
 
 	mxStackIndexCount
 };

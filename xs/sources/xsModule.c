@@ -235,6 +235,7 @@ void fxBuildModule(txMachine* the)
 
 void fxCheckModuleFlag(txMachine* the, txID moduleID, txFlag moduleFlag, txFlag requestFlag)
 {
+#ifndef mxLink
 	if (moduleFlag & XS_JSON_MODULE_FLAG) {
 		if (!(requestFlag & XS_JSON_MODULE_FLAG)) {
 			fxIDToString(the, moduleID, the->nameBuffer, sizeof(the->nameBuffer));
@@ -247,6 +248,7 @@ void fxCheckModuleFlag(txMachine* the, txID moduleID, txFlag moduleFlag, txFlag 
 			fxThrowMessage(the, C_NULL, 0, XS_TYPE_ERROR, "%s: not a JSON module", the->nameBuffer);
 		}
 	}
+#endif
 }
 
 void fxPushModuleOptions(txMachine* the, txFlag moduleFlag)

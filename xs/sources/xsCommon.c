@@ -285,6 +285,9 @@ const txString gxCodeNames[XS_CODE_COUNT] = {
 	/* XS_CODE_USED_2 */ "used_2",
 	/* XS_CODE_USING */ "using",
 	/* XS_CODE_USING_ASYNC */ "await using",
+	/* XS_CODE_AT_2 */ "at_2",
+	/* XS_CODE_SUPER_AT */ "super_at",
+	/* XS_CODE_SUPER_AT_2 */ "super_at_2",
 	/* XS_CODE_TRANSFER_JSON */ "transfer_json",
 };
 
@@ -536,6 +539,9 @@ const txS1 gxCodeSizes[XS_CODE_COUNT] ICACHE_FLASH_ATTR = {
 	3 /* XS_CODE_USED_2 */,
 	1 /* XS_CODE_USING */,
 	1 /* XS_CODE_USING_ASYNC */,
+	1 /* XS_CODE_AT_2 */,
+	1 /* XS_CODE_SUPER_AT */,
+	1 /* XS_CODE_SUPER_AT_2 */,
 	1 /* XS_CODE_TRANSFER_JSON */,
 };
 
