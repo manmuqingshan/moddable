@@ -1,6 +1,6 @@
 # XS Conformance
-Copyright 2016-2023 Moddable Tech, Inc.<BR>
-Revised: November 13, 2024
+Copyright 2016-2024 Moddable Tech, Inc.<BR>
+Revised: November 14, 2024
 
 ## Caveat
 
@@ -55,7 +55,7 @@ To pass some tests, clone [test262](https://github.com/tc39/test262.git) and cha
 
 After the 6th edition, TC39 adopted a [process](https://tc39.github.io/process-document/) based on [proposals](https://github.com/tc39/proposals). Each proposal has a maturity stage. At stage 4, proposals are finished and will be published in the following edition of the specifications.
 
-The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped cases at the end of this document.
+The official conformance test suite, [test262](https://github.com/tc39/test262), contains cases for the published specifications, together with cases for proposals at stages 3 and 4, which is great to prepare XS for future editions. The XS harness, `xst` uses adhoc comparisons of the frontmatter `[features]` to skip cases related to not yet implemented proposals. See the skipped features at the end of this document.
 
 Currently, on macOS, XS passes **99.36%** of the language tests and **88.59%** of the built-ins tests.
 
@@ -1561,22 +1561,27 @@ To be investigated.
 
 Invalid test.
 
-### Skipped cases
+## Skipped Features
 
-`xst` skips cases with the following features:
+Here under are the skipped features. Tests can be skipped because of several features.
 
-- Array.fromAsync
-- Atomics.pause
-- FinalizationRegistry.prototype.cleanupSome
-- Float16Array
-- Math.sumPrecise
-- RegExp.escape
-- ShadowRealm
-- Temporal
-- arbitrary-module-namespace-names
-- decorators
-- import-assertions
-- iterator-helpers
-- json-parse-with-source
-- source-phase-imports
-- source-phase-imports-module-source"
+### Language
+
+- arbitrary-module-namespace-names (16)
+- decorators (24)
+- source-phase-imports (221)
+- source-phase-imports-module-source (84)
+
+### Built-ins
+
+- Array.fromAsync (94)
+- Atomics.pause (6)
+- Error.isError (12)
+- Float16Array (48)
+- Math.sumPrecise (10)
+- RegExp.escape (20)
+- ShadowRealm (64)
+- Temporal (4084)
+- iterator-helpers (383)
+- json-parse-with-source (21)
+- source-phase-imports (8)

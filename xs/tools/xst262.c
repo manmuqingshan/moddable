@@ -54,6 +54,7 @@ struct sxContext {
 
 struct sxFeature {
 	txFeature* next;
+	int count;
 	char name[1];
 };
 
@@ -117,6 +118,7 @@ static void fxPopResult(txPool* pool);
 static void fxPrintBusy(txPool* pool);
 static void fxPrintClear(txPool* pool);
 static void fxPrintFailure(txResult* output);
+static void fxPrintFeatures(txPool* pool);
 static void fxPrintPath(txResult* result);
 static void fxPrintResult(txPool* pool, txResult* result, int c);
 static void fxPrintSuccess(txResult* input);
@@ -141,10 +143,11 @@ static void fxLoadHook(txMachine* the);
 static void fxRunProgramFileInCompartment(txMachine* the, txString path, txUnsigned flags);
 static void fxRunModuleFileInCompartment(txMachine* the, txString path);
 
-#define mxFeaturesCount 15
+#define mxFeaturesCount 16
 static char* gxFeatures[mxFeaturesCount] = { 
 	"Array.fromAsync",
 	"Atomics.pause",
+	"Error.isError",
 	"FinalizationRegistry.prototype.cleanupSome",
  	"Float16Array",
  	"Math.sumPrecise",
@@ -375,6 +378,7 @@ int main262(int argc, char* argv[])
 			else
 				fprintf(stderr, "# 0.00%%");
 			fxPrintResult(pool, result, 0);
+			fxPrintFeatures(pool);
 		}
 		if (!(pool->flags & XST_TRACE_FLAG))
 			fxPrintFailure(pool->current);
@@ -560,6 +564,7 @@ txFeature* fxNewFeature(char* name)
 		c_exit(1);
 	}
 	feature->next = NULL;
+	feature->count = 0;
 	c_memcpy(feature->name, name, nameLength + 1);
 	return feature;
 }
@@ -654,6 +659,16 @@ void fxPrintFailure(txResult* output)
 			fxPrintFailure(output);
 			output = output->next;
 		}
+	}
+}
+
+void fxPrintFeatures(txPool* pool)
+{
+	txFeature* feature = pool->firstFeature;
+	while (feature) {
+		if (feature->count)
+			fprintf(stderr, "- %s (%d)\n", feature->name, feature->count);
+		feature = feature->next;
 	}
 }
 
@@ -1091,6 +1106,7 @@ void fxRunContext(txPool* pool, txContext* context)
 					module = 0;
 					pending = 1;
 					snprintf(message, sizeof(message), "feature: %s", (char*)node->data.scalar.value);
+					feature->count++;
 					break;
 				}
 				feature = feature->next;
