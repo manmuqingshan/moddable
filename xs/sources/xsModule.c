@@ -1099,7 +1099,8 @@ void fxLoadModules(txMachine* the, txSlot* queue)
 						mxPushSlot(loadHook);
 						mxCall();
 						fxPushKeyString(the, moduleID, C_NULL);
-						mxRunCount(1);
+						fxPushModuleOptions(the, loader->flag);
+						mxRunCount(2);
 						
 						fxLoadModulesPromise(the, queue, module, the->stack, fxLoadModulesFulfilled, fxLoadModulesRejected);
 
@@ -1926,6 +1927,7 @@ void fxNewModule(txMachine* the, txSlot* realm, txID moduleID, txFlag moduleFlag
 	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_INTERNAL_FLAG);
 	/* LOADER */
 	slot = fxNextNullProperty(the, slot, XS_NO_ID, XS_INTERNAL_FLAG);
+	slot->flag = XS_INTERNAL_FLAG | moduleFlag;
 	slot->kind = XS_MODULE_KIND;
 	slot->value.module.realm = realm;
 	slot->value.module.id = moduleID;	
@@ -2496,7 +2498,8 @@ void fxRunImportNow(txMachine* the, txSlot* realm, txSlot* referrer)
 							mxPushSlot(loadNowHook);
 							mxCall();
 							fxPushKeyString(the, moduleID, C_NULL);
-							mxRunCount(1);
+							fxPushModuleOptions(the, loader->flag);
+							mxRunCount(2);
 							descriptor = the->stack;
 							fxMapModuleDescriptor(the, realm, moduleID, module, queue, result, descriptor);
 							mxPop(); // descriptor
