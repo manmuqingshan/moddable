@@ -905,7 +905,7 @@ XS_CODE_JUMP:
 					}
 				}
 			}
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 			else if (slot->kind == XS_HOST_FUNCTION_KIND) {
 				if (byte)
 					mxRunDebug(XS_TYPE_ERROR, "new: not a constructor");
@@ -3896,7 +3896,7 @@ XS_CODE_JUMP:
 					offset = slot->value.symbol == mxStack->value.symbol;
 				else if (XS_REFERENCE_KIND == slot->kind)
 					offset = fxIsSameReference(the, slot, mxStack);
-			#ifdef mxHostFunctionPrimitive
+			#if mxHostFunctionPrimitive
 				else if (XS_HOST_FUNCTION_KIND == slot->kind)
 					offset = slot->value.hostFunction.builder == mxStack->value.hostFunction.builder;
 			#endif
@@ -3991,7 +3991,7 @@ XS_CODE_JUMP:
 					offset = slot->value.symbol != mxStack->value.symbol;
 				else if (XS_REFERENCE_KIND == slot->kind)
 					offset = !fxIsSameReference(the, slot, mxStack);
-			#ifdef mxHostFunctionPrimitive
+			#if mxHostFunctionPrimitive
 				else if (XS_HOST_FUNCTION_KIND == slot->kind)
 					offset = slot->value.hostFunction.builder != mxStack->value.hostFunction.builder;
 			#endif
@@ -4131,7 +4131,7 @@ XS_CODE_JUMP:
 				else
 					*mxStack = mxObjectString;
 			}
-		#ifdef mxHostFunctionPrimitive
+		#if mxHostFunctionPrimitive
 			else if (XS_HOST_FUNCTION_KIND == byte)
 				*mxStack = mxFunctionString;
 		#endif

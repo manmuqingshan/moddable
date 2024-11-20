@@ -36,6 +36,9 @@
  */
 
 #include "xsAll.h"
+#ifndef mxRegExp
+	#define mxRegExp 1
+#endif
 #if mxRegExp
 static txNumber fxAdvanceStringIndex(txMachine* the, txString string, txNumber index, txBoolean unicodeFlag);
 static txSlot* fxCheckRegExpInstance(txMachine* the, txSlot* slot);

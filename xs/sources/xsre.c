@@ -2088,7 +2088,7 @@ void fxCaptureCode(txPatternParser* parser, void* it, txInteger direction, txInt
 	*buffer++ = self->captureIndex;
 	if (self->name) {
 		*buffer++ = self->name->index;
-	#ifdef mxRun
+	#ifndef mxCompile
 		if (parser->the)
 			(*parser->code)[5 + self->name->index] = fxNewNameC(parser->the, self->name->string);
 		else
@@ -2457,7 +2457,7 @@ txInteger* fxAllocateRegExpData(void* the, txInteger* code)
 					+ assertionCount * sizeof(txAssertionData)
 					+ quantifierCount * sizeof(txQuantifierData);
 	txInteger* data;
-#ifdef mxRun
+#ifndef mxCompile
 	if (the)
 		data = fxNewChunk(the, size);
 #endif
@@ -2536,7 +2536,7 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 					+ parser->nameIndex * sizeof(txInteger)
 					+ parser->assertionIndex * sizeof(txAssertionData)
 					+ parser->quantifierIndex * sizeof(txQuantifierData);
-		#ifdef mxRun
+		#ifndef mxCompile
 			if (the)
 				*data = fxNewChunk(the, size);
 			else
@@ -2555,7 +2555,7 @@ txBoolean fxCompileRegExp(void* the, txString pattern, txString modifier, txInte
 			txInteger* buffer;
 			offset = parser->size;
 			parser->size += sizeof(txInteger);
-		#ifdef mxRun
+		#ifndef mxCompile
 			#ifdef mxMetering
 				((txMachine*)the)->meterIndex += parser->size * XS_PARSE_REGEXP_METERING;
 			#endif
@@ -10889,7 +10889,7 @@ txInteger fxFinalSigmaToLower(txMachine* the, txInteger where, txInteger charact
     return 0x03c3;
 }
 
-#ifdef mxRun
+#ifndef mxCompile
 
 static txInteger fx_String_prototype_toCase_aux(txMachine* the, txString* q, txString* r, txInteger length, txInteger delta)
 {

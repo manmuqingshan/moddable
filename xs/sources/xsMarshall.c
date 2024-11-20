@@ -928,7 +928,7 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 	case XS_CALLBACK_X_KIND:
 	case XS_CODE_KIND:
 	case XS_CODE_X_KIND:
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND:
 #endif
 		fxMeasureThrow(the, theBuffer, "function");

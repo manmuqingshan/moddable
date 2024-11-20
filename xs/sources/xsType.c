@@ -253,7 +253,7 @@ txSlot* fxToInstance(txMachine* the, txSlot* theSlot)
 	case XS_REFERENCE_KIND:
 		anInstance = theSlot->value.reference;
 		break;
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	case XS_HOST_FUNCTION_KIND: {
 		const txHostFunctionBuilder* builder = theSlot->value.hostFunction.builder;
 		anInstance = fxNewHostFunction(the, builder->callback, builder->length, builder->id, theSlot->value.hostFunction.profileID);

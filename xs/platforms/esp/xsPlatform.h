@@ -50,12 +50,7 @@
 	#define ICACHE_FLASH1_ATTR __attribute__((section(".irom.text.mod")))
 #endif
 
-#define mxRegExp 1
 //#define mxReport 1
-#define mxNoFunctionLength 1
-#define mxNoFunctionName 1
-#define mxHostFunctionPrimitive 1
-#define mxFewGlobalsTable 1
 #ifdef mxDebug
 	#define mxNoConsole 1
 #endif

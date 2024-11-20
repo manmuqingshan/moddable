@@ -53,6 +53,14 @@
 	#define __has_builtin(x) 0
 #endif
 
+#ifndef mxAliasInstance
+	#define mxAliasInstance 1
+#endif
+
+#ifndef mxHostFunctionPrimitive
+	#define mxHostFunctionPrimitive 1
+#endif
+
 #ifndef mxECMAScript2025
 	#define mxECMAScript2025 1
 #endif
@@ -1300,14 +1308,6 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 #define mxStringLength(_STRING) ((txSize)c_strlen(_STRING))
 
 #define mxPtrDiff(_DIFF) ((txSize)(_DIFF))
-
-#ifndef mxAliasInstance
-	#define mxAliasInstance 1
-#endif
-
-#ifndef mxDebugEval
-	#define mxDebugEval 0
-#endif
 
 #ifndef mxIntegerDivideOverflowException
 	#define mxIntegerDivideOverflowException 1

@@ -51,9 +51,6 @@ extern "C" {
 #ifndef mxKeysGarbageCollection
 	#define mxKeysGarbageCollection 0
 #endif
-#ifndef mxRegExp
-	#define mxRegExp 1
-#endif
 #ifndef mxStringInfoCacheLength
 	#define mxStringInfoCacheLength 0
 #endif
@@ -290,7 +287,7 @@ typedef union {
 	struct { txString string; txU4 sum; } key;
 	struct { txSlot* first; txSlot* last; } list;
 	struct { txSlot* realm; txID id; } module;
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	struct { const txHostFunctionBuilder* builder; txID profileID; } hostFunction;
 #endif
 	struct { txSlot* cache; txSlot* instance; } hostInspector;
@@ -2134,7 +2131,7 @@ enum {
 	XS_STACK_KIND,
 	XS_VAR_KIND,
 	XS_CALLBACK_X_KIND,
-#ifdef mxHostFunctionPrimitive
+#if mxHostFunctionPrimitive
 	XS_HOST_FUNCTION_KIND,
 #endif
 	XS_HOST_INSPECTOR_KIND,
