@@ -53,40 +53,38 @@
 	#define __has_builtin(x) 0
 #endif
 
+// defaults runtime model to Moddable SDK
 #ifndef mxAliasInstance
 	#define mxAliasInstance 1
 #endif
-
 #ifndef mxHostFunctionPrimitive
 	#define mxHostFunctionPrimitive 1
 #endif
+#ifndef mxKeysGarbageCollection
+	#define mxKeysGarbageCollection 0
+#endif
 
+// defaults ECMASScript edition and proposals to Moddable SDK
 #ifndef mxECMAScript2025
 	#define mxECMAScript2025 1
 #endif
-
 #ifndef mxECMAScript2024
 	#define mxECMAScript2024 1
 #endif
-
 #ifndef mxECMAScript2023
 	#define mxECMAScript2023 1
 #endif
-
 #ifndef mxExplicitResourceManagement
 	#define mxExplicitResourceManagement 0
 #endif
-
-#ifndef mxUint8ArrayBase64
-	#define mxUint8ArrayBase64 1
+#ifndef mxFloat16
+	#define mxFloat16 1
 #endif
-
 #ifndef mxModuleStuff
 	#define mxModuleStuff 0
 #endif
-
-#ifndef mxFloat16
-	#define mxFloat16 1
+#ifndef mxUint8ArrayBase64
+	#define mxUint8ArrayBase64 1
 #endif
 
 #ifdef __cplusplus
