@@ -101,7 +101,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 	#define mxECMAScript2025Additions 0
 #endif
 #if mxFloat16
-	#define mxFloat16Additions 2
+	#define mxFloat16Additions 3
 #else
 	#define mxFloat16Additions 0
 #endif
@@ -672,6 +672,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #if mxFloat16
 	fx_DataView_prototype_getFloat16,
 	fx_DataView_prototype_setFloat16,
+	fx_Math_f16round,
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];

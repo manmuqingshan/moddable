@@ -1277,6 +1277,7 @@ enum {
 	_union,
 #endif
 #if mxFloat16
+	_f16round,
 	_getFloat16,
 	_setFloat16,
 #endif

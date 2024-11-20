@@ -1165,6 +1165,7 @@ mxExport void fx_Math_cos(txMachine* the);
 mxExport void fx_Math_cosh(txMachine* the);
 mxExport void fx_Math_exp(txMachine* the);
 mxExport void fx_Math_expm1(txMachine* the);
+mxExport void fx_Math_f16round(txMachine* the);
 mxExport void fx_Math_floor(txMachine* the);
 mxExport void fx_Math_fround(txMachine* the);
 mxExport void fx_Math_hypot(txMachine* the);

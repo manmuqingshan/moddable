@@ -2998,6 +2998,13 @@ void fxFloat16Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slo
 	mxMeterOne();
 }
 
+void fx_Math_f16round(txMachine* the)
+{
+	txFloat16 value = mxFloat64to16((mxArgc < 1) ? C_NAN : fxToNumber(the, mxArgv(0)));
+	mxResult->kind = XS_NUMBER_KIND;
+	mxResult->value.number = mxFloat16to64(value);
+}
+
 #endif
 
 #if mxCanonicalNaN

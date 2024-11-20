@@ -1854,6 +1854,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"union",
 #endif
 #if mxFloat16
+	"f16round",
 	"getFloat16",
 	"setFloat16",
 #endif
