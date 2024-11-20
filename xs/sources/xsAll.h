@@ -172,7 +172,11 @@ typedef struct {
 #define mxSortThreshold 4
 #define mxSortPartitionCount 30
 
+#if mxFloat16
+#define mxTypeArrayCount 12
+#else
 #define mxTypeArrayCount 11
+#endif
 
 typedef struct {
 	txU2 size;
@@ -1387,7 +1391,7 @@ extern txSize fxCacheUnicodeToUTF8Offset(txMachine* the, txString string, txSize
 #define fxAllocateStringInfoCache(THE)
 #define fxFreeStringInfoCache(THE)
 #define fxInvalidateStringInfoCache(THE)
-#define fxCacheUTF8Length(THE,STRING) c_strlen(STRING)
+#define fxCacheUTF8Length(THE,STRING) ((txSize)c_strlen(STRING))
 #define fxCacheUTF8ToUnicodeOffset(THE,STRING,OFFSET) fxUTF8ToUnicodeOffset(STRING,OFFSET)
 #define fxCacheUnicodeLength(THE,STRING) fxUnicodeLength(STRING,C_NULL)
 #define fxCacheUnicodeToUTF8Offset(THE,STRING,OFFSET) fxUnicodeToUTF8Offset(STRING,OFFSET)
@@ -1509,6 +1513,11 @@ extern void fxBigInt64Setter(txMachine* the, txSlot* data, txInteger offset, txS
 extern int fxBigUint64Compare(const void* p, const void* q);
 extern void fxBigUint64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxBigUint64Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
+#if mxFloat16
+extern int fxFloat16Compare(const void* p, const void* q);
+extern void fxFloat16Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
+extern void fxFloat16Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
+#endif
 extern int fxFloat32Compare(const void* p, const void* q);
 extern void fxFloat32Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxFloat32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
@@ -1565,6 +1574,9 @@ mxExport void fx_DataView_prototype_byteLength_get(txMachine* the);
 mxExport void fx_DataView_prototype_byteOffset_get(txMachine* the);
 mxExport void fx_DataView_prototype_getBigInt64(txMachine* the);
 mxExport void fx_DataView_prototype_getBigUint64(txMachine* the);
+#if mxFloat16
+mxExport void fx_DataView_prototype_getFloat16(txMachine* the);
+#endif
 mxExport void fx_DataView_prototype_getFloat32(txMachine* the);
 mxExport void fx_DataView_prototype_getFloat64(txMachine* the);
 mxExport void fx_DataView_prototype_getInt8(txMachine* the);
@@ -1575,6 +1587,9 @@ mxExport void fx_DataView_prototype_getUint16(txMachine* the);
 mxExport void fx_DataView_prototype_getUint32(txMachine* the);
 mxExport void fx_DataView_prototype_setBigInt64(txMachine* the);
 mxExport void fx_DataView_prototype_setBigUint64(txMachine* the);
+#if mxFloat16
+mxExport void fx_DataView_prototype_setFloat16(txMachine* the);
+#endif
 mxExport void fx_DataView_prototype_setFloat32(txMachine* the);
 mxExport void fx_DataView_prototype_setFloat64(txMachine* the);
 mxExport void fx_DataView_prototype_setInt8(txMachine* the);
@@ -2725,6 +2740,9 @@ enum {
 #define mxErrorConstructor the->stackIntrinsics[-1 - _Error]
 #define mxEvalErrorConstructor the->stackIntrinsics[-1 - _EvalError]
 #define mxFinalizationRegistryConstructor the->stackIntrinsics[-1 - _FinalizationRegistry]
+#if mxFloat16
+#define mxFloat16ArrayConstructor the->stackIntrinsics[-1 - _Float16Array]
+#endif
 #define mxFloat32ArrayConstructor the->stackIntrinsics[-1 - _Float32Array]
 #define mxFloat64ArrayConstructor the->stackIntrinsics[-1 - _Float64Array]
 #define mxFunctionConstructor the->stackIntrinsics[-1 - _Function]

@@ -230,6 +230,10 @@ void fxBuildDataView(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_setBigInt64), 2, mxID(_setBigInt64), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_getBigUint64), 1, mxID(_getBigUint64), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_setBigUint64), 2, mxID(_setBigUint64), XS_DONT_ENUM_FLAG);
+#if mxFloat16
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_getFloat16), 1, mxID(_getFloat16), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_setFloat16), 2, mxID(_setFloat16), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_getFloat32), 1, mxID(_getFloat32), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_setFloat32), 2, mxID(_setFloat32), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_DataView_prototype_getFloat64), 1, mxID(_getFloat64), XS_DONT_ENUM_FLAG);
@@ -1002,6 +1006,13 @@ void fx_DataView_prototype_getBigUint64(txMachine* the)
 	fx_DataView_prototype_get(the, 8, fxBigUint64Getter);
 }
 
+#if mxFloat16
+void fx_DataView_prototype_getFloat16(txMachine* the)
+{
+	fx_DataView_prototype_get(the, 2, fxFloat16Getter);
+}
+#endif
+
 void fx_DataView_prototype_getFloat32(txMachine* the)
 {
 	fx_DataView_prototype_get(the, 4, fxFloat32Getter);
@@ -1076,6 +1087,13 @@ void fx_DataView_prototype_setBigUint64(txMachine* the)
 {
 	fx_DataView_prototype_set(the, 8, fxBigIntCoerce, fxBigUint64Setter);
 }
+
+#if mxFloat16
+void fx_DataView_prototype_setFloat16(txMachine* the)
+{
+	fx_DataView_prototype_set(the, 2, fxNumberCoerce, fxFloat16Setter);
+}
+#endif
 
 void fx_DataView_prototype_setFloat32(txMachine* the)
 {
@@ -2645,8 +2663,9 @@ void fx_TypedArray_prototype_with(txMachine* the)
 }
 
 #if mxBigEndian
-	#define mxEndianDouble_BtoN(a) (a)
-	#define mxEndianFloat_BtoN(a) (a)
+	#define mxEndianFloat16_BtoN(a) (a)
+	#define mxEndianFloat32_BtoN(a) (a)
+	#define mxEndianFloat64_BtoN(a) (a)
 	#define mxEndianS64_BtoN(a) (a)
 	#define mxEndianU64_BtoN(a) (a)
 	#define mxEndianS32_BtoN(a) (a)
@@ -2654,8 +2673,9 @@ void fx_TypedArray_prototype_with(txMachine* the)
 	#define mxEndianS16_BtoN(a) (a)
 	#define mxEndianU16_BtoN(a) (a)
 
-	#define mxEndianDouble_NtoB(a) (a)
-	#define mxEndianFloat_NtoB(a) (a)
+	#define mxEndianFloat16_NtoB(a) (a)
+	#define mxEndianFloat32_NtoB(a) (a)
+	#define mxEndianFloat64_NtoB(a) (a)
 	#define mxEndianS64_NtoB(a) (a)
 	#define mxEndianU64_NtoB(a) (a)
 	#define mxEndianS32_NtoB(a) (a)
@@ -2663,8 +2683,9 @@ void fx_TypedArray_prototype_with(txMachine* the)
 	#define mxEndianS16_NtoB(a) (a)
 	#define mxEndianU16_NtoB(a) (a)
 #else
-	#define mxEndianDouble_LtoN(a) (a)
-	#define mxEndianFloat_LtoN(a) (a)
+	#define mxEndianFloat16_LtoN(a) (a)
+	#define mxEndianFloat32_LtoN(a) (a)
+	#define mxEndianFloat64_LtoN(a) (a)
 	#define mxEndianS64_LtoN(a) (a)
 	#define mxEndianU64_LtoN(a) (a)
 	#define mxEndianS32_LtoN(a) (a)
@@ -2672,8 +2693,9 @@ void fx_TypedArray_prototype_with(txMachine* the)
 	#define mxEndianS16_LtoN(a) (a)
 	#define mxEndianU16_LtoN(a) (a)
 
-	#define mxEndianDouble_NtoL(a) (a)
-	#define mxEndianFloat_NtoL(a) (a)
+	#define mxEndianFloat16_NtoL(a) (a)
+	#define mxEndianFloat32_NtoL(a) (a)
+	#define mxEndianFloat64_NtoL(a) (a)
 	#define mxEndianS64_NtoL(a) (a)
 	#define mxEndianU64_NtoL(a) (a)
 	#define mxEndianS32_NtoL(a) (a)
@@ -2683,8 +2705,9 @@ void fx_TypedArray_prototype_with(txMachine* the)
 #endif
 
 #if mxLittleEndian
-	#define mxEndianDouble_BtoN(a) (mxEndianDouble_Swap(a))
-	#define mxEndianFloat_BtoN(a) (mxEndianFloat_Swap(a))
+	#define mxEndianFloat16_BtoN(a) (mxEndianFloat16_Swap(a))
+	#define mxEndianFloat32_BtoN(a) (mxEndianFloat32_Swap(a))
+	#define mxEndianFloat64_BtoN(a) (mxEndianFloat64_Swap(a))
 	#define mxEndianS64_BtoN(a) ((txS8) mxEndian64_Swap(a))
 	#define mxEndianU64_BtoN(a) ((txU8) mxEndian64_Swap(a))
 	#define mxEndianS32_BtoN(a) ((txS4) mxEndian32_Swap(a))
@@ -2692,8 +2715,9 @@ void fx_TypedArray_prototype_with(txMachine* the)
 	#define mxEndianS16_BtoN(a) ((txS2) mxEndian16_Swap(a))
 	#define mxEndianU16_BtoN(a) ((txU2) mxEndian16_Swap(a))
 
-	#define mxEndianDouble_NtoB(a) (mxEndianDouble_Swap(a))
-	#define mxEndianFloat_NtoB(a) (mxEndianFloat_Swap(a))
+	#define mxEndianFloat16_NtoB(a) (mxEndianFloat16_Swap(a))
+	#define mxEndianFloat32_NtoB(a) (mxEndianFloat32_Swap(a))
+	#define mxEndianFloat64_NtoB(a) (mxEndianFloat64_Swap(a))
 	#define mxEndianS64_NtoB(a) ((txS8) mxEndian64_Swap(a))
 	#define mxEndianU64_NtoB(a) ((txU8) mxEndian64_Swap(a))
 	#define mxEndianS32_NtoB(a) ((txS4) mxEndian32_Swap(a))
@@ -2701,8 +2725,9 @@ void fx_TypedArray_prototype_with(txMachine* the)
 	#define mxEndianS16_NtoB(a) ((txS2) mxEndian16_Swap(a))
 	#define mxEndianU16_NtoB(a) ((txU2) mxEndian16_Swap(a))
 #else
-	#define mxEndianDouble_LtoN(a) (mxEndianDouble_Swap(a))
-	#define mxEndianFloat_LtoN(a) (mxEndianFloat_Swap(a))
+	#define mxEndianFloat16_LtoN(a) (mxEndianFloat16_Swap(a))
+	#define mxEndianFloat32_LtoN(a) (mxEndianFloat32_Swap(a))
+	#define mxEndianFloat64_LtoN(a) (mxEndianFloat64_Swap(a))
 	#define mxEndianS64_LtoN(a) ((txS8) mxEndian64_Swap(a))
 	#define mxEndianU64_LtoN(a) ((txU8) mxEndian64_Swap(a))
 	#define mxEndianS32_LtoN(a) ((txS4) mxEndian32_Swap(a))
@@ -2710,8 +2735,9 @@ void fx_TypedArray_prototype_with(txMachine* the)
 	#define mxEndianS16_LtoN(a) ((txS2) mxEndian16_Swap(a))
 	#define mxEndianU16_LtoN(a) ((txU2) mxEndian16_Swap(a))
 
-	#define mxEndianDouble_NtoL(a) (mxEndianDouble_Swap(a))
-	#define mxEndianFloat_NtoL(a) (mxEndianFloat_Swap(a))
+	#define mxEndianFloat16_NtoL(a) (mxEndianFloat16_Swap(a))
+	#define mxEndianFloat32_NtoL(a) (mxEndianFloat32_Swap(a))
+	#define mxEndianFloat64_NtoL(a) (mxEndianFloat64_Swap(a))
 	#define mxEndianS64_NtoL(a) ((txS8) mxEndian64_Swap(a))
 	#define mxEndianU64_NtoL(a) ((txU8) mxEndian64_Swap(a))
 	#define mxEndianS32_NtoL(a) ((txS4) mxEndian32_Swap(a))
@@ -2761,36 +2787,6 @@ void fx_TypedArray_prototype_with(txMachine* the)
 		return b;
 	}
 #endif
-
-static float mxEndianFloat_Swap(float a)
-{
-#if defined(__GNUC__) || defined(__llvm__)
-	uint32_t result = __builtin_bswap32(*(uint32_t *)&a);
-	return *(float *)&result;
-#else
-	float b;
-	txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
-	int i;
-	for (i = 0; i < 4; i++)
-		p2[i] = p1[3 - i];
-	return b;
-#endif
-}
-
-static double mxEndianDouble_Swap(double a)
-{
-#if defined(__GNUC__) || defined(__llvm__)
-	uint64_t result = __builtin_bswap64(*(uint64_t *)&a);
-	return *(double *)&result;
-#else
-	double b;
-	txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
-	int i;
-	for (i = 0; i < 8; i++)
-		p2[i] = p1[7 - i];
-	return b;
-#endif
-}
 
 #define toNative(size, endian) mxEndian##size##_##endian##toN
 #define fromNative(size, endian) mxEndian##size##_Nto##endian
@@ -2861,6 +2857,173 @@ void fxBigUint64Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* s
 	mxMeterOne();
 }
 
+#if mxFloat16
+
+#ifdef mxUseFloat16
+typedef _Float16 txFloat16;
+#define mxFloat16to64(X) ((double)X) 
+#define mxFloat64to16(X) ((_Float16)X) 
+#else
+typedef uint16_t txFloat16;
+#define mxFloat16to64(X) fxFloat16to64(X) 
+#define mxFloat64to16(X) fxFloat64to16(X) 
+
+// adapted from https://half.sourceforge.net
+
+static double fxFloat16to64(uint16_t value)
+{
+	uint32_t hi, abs;
+	uint64_t dbits;
+	double out;
+	
+	hi = (uint32_t)(value & 0x8000) << 16;
+	abs = value & 0x7FFF;
+	if (abs) {
+		hi |= 0x3F000000 << (abs >= 0x7C00);
+		for (; abs < 0x400; abs <<= 1, hi -= 0x100000);
+		hi += abs << 10;
+	}
+	dbits = (uint64_t)(hi) << 32;
+	c_memcpy(&out, &dbits, sizeof(double));
+	return out;
+}
+
+static uint32_t fxRoundFloat16(uint32_t value, uint32_t g, uint32_t s) {
+  return value + (g & (s | value));
+}
+
+static uint16_t fxFloat64to16(double value)
+{
+	uint64_t dbits;
+	uint32_t hi, lo, sign;
+	
+	c_memcpy(&dbits, &value, sizeof(double));
+	hi = dbits >> 32;
+	lo = dbits & 0xFFFFFFFF;
+	sign = (hi >> 16) & 0x8000;
+	hi &= 0x7FFFFFFF;
+	if (hi >= 0x7FF00000)
+		return sign | 0x7C00 | ((dbits & 0xFFFFFFFFFFFFF) ? (0x200 | ((hi >> 10) & 0x3FF)) : 0);
+	if (hi >= 0x40F00000)
+		return sign | 0x7C00;
+	if (hi >= 0x3F100000)
+		return fxRoundFloat16(sign | (((hi >> 20) - 1008) << 10) | ((hi >> 10) & 0x3FF), (hi >> 9) & 1, ((hi & 0x1FF) | lo) != 0);
+	if (hi >= 0x3E600000) {
+		int i = 1018 - (hi >> 20);
+		hi = (hi & 0xFFFFF) | 0x100000;
+		return fxRoundFloat16(sign | (hi >> (i + 1)), (hi >> i) & 1, ((hi & (((uint32_t)(1) << i) - 1)) | lo) != 0);
+	}
+	return sign;
+}
+
+#endif
+
+#if mxCanonicalNaN
+	#if mxBigEndian
+		static uint8_t gxCanonicalNaN16Bytes[2] = { 0x7E, 0 };
+	#else
+		static uint8_t gxCanonicalNaN16Bytes[2] = { 0, 0x7E };
+	#endif
+	static txFloat16* gxCanonicalNaN16 = (txFloat16*)gxCanonicalNaN16Bytes;
+#endif
+
+static txFloat16 mxEndianFloat16_Swap(txFloat16 a)
+{
+#if defined(__GNUC__) || defined(__llvm__)
+	uint32_t result = __builtin_bswap16(*(uint16_t *)&a);
+	return *(txFloat16 *)&result;
+#else
+	txFloat16 b;
+	txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
+	int i;
+	for (i = 0; i < 2; i++)
+		p2[i] = p1[1 - i];
+	return b;
+#endif
+}
+
+int fxFloat16Compare(const void* p, const void* q)
+{
+	double a = mxFloat16to64(*((txFloat16*)p));
+	double b = mxFloat16to64(*((txFloat16*)q));
+	if (c_isnan(a)) {
+		if (c_isnan(b)) 
+			return 0;
+		return 1;
+	}
+	if (c_isnan(b))
+		return -1;
+	if (a < b)
+		return -1;
+	if (a > b)
+		return 1;
+	if (a == 0) {
+		if (c_signbit(a)) {
+			if (c_signbit(b)) 
+				return 0;
+			return -1;
+		}
+		if (c_signbit(b))
+			return 1;
+	}
+	return 0;
+}
+
+void fxFloat16Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
+{
+	txFloat16 value;
+	slot->kind = XS_NUMBER_KIND;
+#ifdef mxMisalignedSettersCrash
+	c_memcpy(&value, data->value.arrayBuffer.address + offset, sizeof(value));
+#else
+	value = *((txFloat16*)(data->value.arrayBuffer.address + offset));
+#endif
+	slot->value.number = mxFloat16to64(IMPORT(Float16));
+	mxMeterOne();
+}
+
+void fxFloat16Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
+{
+#if mxCanonicalNaN
+	txFloat16 value = (c_isnan(slot->value.number)) ? *gxCanonicalNaN16 : mxFloat64to16(slot->value.number);
+#else
+	txFloat16 value = mxFloat64to16(slot->value.number);
+#endif
+#ifdef mxMisalignedSettersCrash
+	value = EXPORT(Float16);
+	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(value));
+#else
+	*((txFloat16*)(data->value.arrayBuffer.address + offset)) = EXPORT(Float16);
+#endif
+	mxMeterOne();
+}
+
+#endif
+
+#if mxCanonicalNaN
+	#if mxBigEndian
+		static uint8_t gxCanonicalNaN32Bytes[4] = { 0x7F, 0xC0, 0, 0 };
+	#else
+		static uint8_t gxCanonicalNaN32Bytes[4] = { 0, 0, 0xC0, 0x7F };
+	#endif
+	static float* gxCanonicalNaN32 = (float*)gxCanonicalNaN32Bytes;
+#endif
+
+static float mxEndianFloat32_Swap(float a)
+{
+#if defined(__GNUC__) || defined(__llvm__)
+	uint32_t result = __builtin_bswap32(*(uint32_t *)&a);
+	return *(float *)&result;
+#else
+	float b;
+	txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
+	int i;
+	for (i = 0; i < 4; i++)
+		p2[i] = p1[3 - i];
+	return b;
+#endif
+}
+
 int fxFloat32Compare(const void* p, const void* q)
 {
 	float a = *((float*)p);
@@ -2897,24 +3060,48 @@ void fxFloat32Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slo
 #else
 	value = *((float*)(data->value.arrayBuffer.address + offset));
 #endif
-	slot->value.number = IMPORT(Float);
+	slot->value.number = IMPORT(Float32);
 	mxMeterOne();
 }
 
 void fxFloat32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
-	float value = (float)slot->value.number;
 #if mxCanonicalNaN
-	if (c_isnan(value))
-		value = *gxCanonicalNaN32;
+	float value = (c_isnan(slot->value.number)) ? *gxCanonicalNaN32 : (float)slot->value.number;
+#else
+	float value = (float)slot->value.number;
 #endif
 #ifdef mxMisalignedSettersCrash
-	value = EXPORT(Float);
-	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(float));
+	value = EXPORT(Float32);
+	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(value));
 #else
-	*((float*)(data->value.arrayBuffer.address + offset)) = EXPORT(Float);
+	*((float*)(data->value.arrayBuffer.address + offset)) = EXPORT(Float32);
 #endif
 	mxMeterOne();
+}
+
+#if mxCanonicalNaN
+	#if mxBigEndian
+		static uint8_t gxCanonicalNaN64Bytes[8] = { 0x7F, 0xF8, 0, 0, 0, 0, 0, 0 };
+	#else
+		static uint8_t gxCanonicalNaN64Bytes[8] = { 0, 0, 0, 0, 0, 0, 0xF8, 0x7F };
+	#endif
+	double* gxCanonicalNaN64 = (double*)gxCanonicalNaN64Bytes;
+#endif
+
+static double mxEndianFloat64_Swap(double a)
+{
+#if defined(__GNUC__) || defined(__llvm__)
+	uint64_t result = __builtin_bswap64(*(uint64_t *)&a);
+	return *(double *)&result;
+#else
+	double b;
+	txU1 *p1 = (txU1 *) &a, *p2 = (txU1 *) &b;
+	int i;
+	for (i = 0; i < 8; i++)
+		p2[i] = p1[7 - i];
+	return b;
+#endif
 }
 
 int fxFloat64Compare(const void* p, const void* q)
@@ -2953,22 +3140,22 @@ void fxFloat64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slo
 #else
 	value = *((double*)(data->value.arrayBuffer.address + offset));
 #endif
-	slot->value.number = IMPORT(Double);
+	slot->value.number = IMPORT(Float64);
 	mxMeterOne();
 }
 
 void fxFloat64Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian)
 {
-	double value = slot->value.number;
 #if mxCanonicalNaN
-	if (c_isnan(value))
-		value = *gxCanonicalNaN64;
+	double value = (c_isnan(slot->value.number)) ? *gxCanonicalNaN32 : slot->value.number;
+#else
+	double value = slot->value.number;
 #endif
 #ifdef mxMisalignedSettersCrash
-	value = EXPORT(Double);
-	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(double));
+	value = EXPORT(Float64);
+	c_memcpy(data->value.arrayBuffer.address + offset, &value, sizeof(value));
 #else
-	*((double*)(data->value.arrayBuffer.address + offset)) = EXPORT(Double);
+	*((double*)(data->value.arrayBuffer.address + offset)) = EXPORT(Float64);
 #endif
 	mxMeterOne();
 }

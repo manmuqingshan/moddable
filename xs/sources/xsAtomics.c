@@ -355,7 +355,7 @@ void fx_SharedArrayBuffer(txMachine* the)
 	property = instance->next = fxNewSlot(the);
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_HOST_KIND;
-	property->value.host.data = fxCreateSharedChunk(byteLength);
+	property->value.host.data = fxCreateSharedChunk((txInteger)byteLength);
 	if (!property->value.host.data) {
 		property->value.host.variant.destructor = NULL;
 		mxRangeError("cannot allocate SharedArrayBuffer insatnce");
@@ -364,8 +364,8 @@ void fx_SharedArrayBuffer(txMachine* the)
 	property = property->next = fxNewSlot(the);
 	property->flag = XS_INTERNAL_FLAG;
 	property->kind = XS_BUFFER_INFO_KIND;
-	property->value.bufferInfo.length = byteLength;
-	property->value.bufferInfo.maxLength = maxByteLength;
+	property->value.bufferInfo.length = (txInteger)byteLength;
+	property->value.bufferInfo.maxLength = (txInteger)maxByteLength;
 	mxPullSlot(mxResult);
 }
 

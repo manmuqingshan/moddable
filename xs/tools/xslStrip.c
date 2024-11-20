@@ -157,6 +157,12 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 #endif
 			else if (!c_strcmp(name, "FinalizationRegistry"))
 				fxStripCallback(linker, fx_FinalizationRegistry);
+#if mxFloat16
+			else if (!c_strcmp(name, "Float16Array")) {
+				fxUnuseSymbol(linker, mxID(_Float16Array));
+				fxStripCallback(linker, fx_Float16Array);
+			}
+#endif
 			else if (!c_strcmp(name, "Float32Array")) {
 				fxUnuseSymbol(linker, mxID(_Float32Array));
 				fxStripCallback(linker, fx_Float32Array);
@@ -648,6 +654,12 @@ void fxStripDefaults(txLinker* linker, FILE* file)
 		fprintf(file, "\t{ 8, 3, fxBigUint64Getter, fxBigUint64Setter, fxBigIntCoerce, fxBigUint64Compare, _getBigUint64, _setBigUint64, _BigUint64Array },\n");
 	else
 		fprintf(file, "\t{ 8, 3, C_NULL, C_NULL, C_NULL, C_NULL, _getBigUint64, _setBigUint64, _BigUint64Array },\n");
+#if mxFloat16
+	if (fxIsLinkerSymbolUsed(linker, mxID(_Float16Array)))
+		fprintf(file, "\t{ 2, 1, fxFloat16Getter, fxFloat16Setter, fxNumberCoerce, fxFloat16Compare, _getFloat16, _setFloat16, _Float16Array },\n");
+	else
+		fprintf(file, "\t{ 2, 1, C_NULL, C_NULL, C_NULL, C_NULL, _getFloat16, _setFloat16, _Float16Array },\n");
+#endif
 	if (fxIsLinkerSymbolUsed(linker, mxID(_Float32Array)))
 		fprintf(file, "\t{ 4, 2, fxFloat32Getter, fxFloat32Setter, fxNumberCoerce, fxFloat32Compare, _getFloat32, _setFloat32, _Float32Array },\n");
 	else

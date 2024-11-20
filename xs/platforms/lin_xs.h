@@ -59,6 +59,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 
+#define mxUseFloat16 1
 #define mxUseGCCAtomics 1
 #define mxUsePOSIXThreads 1
 

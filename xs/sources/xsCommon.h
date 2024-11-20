@@ -73,6 +73,14 @@
 	#define mxUint8ArrayBase64 1
 #endif
 
+#ifndef mxModuleStuff
+	#define mxModuleStuff 0
+#endif
+
+#ifndef mxFloat16
+	#define mxFloat16 1
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -764,6 +772,9 @@ enum {
 	_Error,
 	_EvalError,
 	_FinalizationRegistry,
+#if mxFloat16	
+	_Float16Array,
+#endif
 	_Float32Array,
 	_Float64Array,
 	_Int16Array,
@@ -1261,9 +1272,13 @@ enum {
 	_isSupersetOf,
 	_options,
 	_symmetricDifference,
-	_try,
+	_try_,
 	_type,
 	_union,
+#endif
+#if mxFloat16
+	_getFloat16,
+	_setFloat16,
 #endif
 	XS_ID_COUNT
 };
@@ -1300,12 +1315,7 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 #ifndef mxCanonicalNaN
 	#define mxCanonicalNaN 0
 #else
-	extern float* gxCanonicalNaN32;
 	extern double* gxCanonicalNaN64;
-#endif
-
-#ifndef mxModuleStuff
-	#define mxModuleStuff 0
 #endif
 
 #ifdef __cplusplus

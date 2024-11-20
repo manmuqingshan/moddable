@@ -73,7 +73,7 @@ void fxBuildPromise(txMachine* the)
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_reject), 1, mxID(_reject), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_resolve), 1, mxID(_resolve), XS_DONT_ENUM_FLAG);
 #if mxECMAScript2025
-	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_try), 1, mxID(_try), XS_DONT_ENUM_FLAG);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_try), 1, mxID(_try_), XS_DONT_ENUM_FLAG);
 #endif
 #if mxECMAScript2024
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Promise_withResolvers), 0, mxID(_withResolvers), XS_DONT_ENUM_FLAG);

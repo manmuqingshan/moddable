@@ -111,6 +111,9 @@ static void fxCompareResults(txResult* input, txResult* output);
 static void fxCountResult(txPool* pool, txContext* context, int success, int pending, char* message);
 static void fxDefaultFeatures(txPool* pool);
 static int fxFilterResult(txResult* result);
+static void fxFreeFeatures(txPool* pool);
+static void fxFreeResult(txResult* result);
+static void fxFreeResults(txPool* pool);
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
 static txFeature* fxNewFeature(char* name);
 static txResult* fxNewResult(char* path, char* message);
@@ -143,13 +146,12 @@ static void fxLoadHook(txMachine* the);
 static void fxRunProgramFileInCompartment(txMachine* the, txString path, txUnsigned flags);
 static void fxRunModuleFileInCompartment(txMachine* the, txString path);
 
-#define mxFeaturesCount 16
+#define mxFeaturesCount 15
 static char* gxFeatures[mxFeaturesCount] = { 
 	"Array.fromAsync",
 	"Atomics.pause",
 	"Error.isError",
 	"FinalizationRegistry.prototype.cleanupSome",
- 	"Float16Array",
  	"Math.sumPrecise",
  	"RegExp.escape",
  	"ShadowRealm",
@@ -385,7 +387,8 @@ int main262(int argc, char* argv[])
 		if (*outputPath)
 			fxWriteConfiguration(pool, outputPath);
 	}
-	
+	fxFreeResults(pool);
+	fxFreeFeatures(pool);
 	return error;
 }
 
@@ -542,6 +545,40 @@ int fxFilterResult(txResult* result)
 	}
 	return flag;
 }
+
+void fxFreeFeatures(txPool* pool)
+{
+	txFeature** address = &(pool->firstFeature);
+	txFeature* feature;
+	while ((feature = *address)) {
+		*address = feature->next;
+		c_free(feature);
+	}
+}
+
+void fxFreeResult(txResult* result)
+{
+	txResult** address = &(result->first);
+	while ((result = *address)) {
+		fxFreeResult(result);
+		*address = result->next;
+		c_free(result);
+	}
+}
+
+void fxFreeResults(txPool* pool)
+{
+	txResult** address = &(pool->current);
+	txResult* result;
+	while ((result = *address)) {
+		fxFreeResult(result);
+		*address = result->next;
+		c_free(result);
+	}
+}
+
+static void fxFreeResult(txResult* result);
+static void fxFreeResults(txPool* pool);
 
 yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name)
 {

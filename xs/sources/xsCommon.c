@@ -1349,6 +1349,9 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"Error",
 	"EvalError",
 	"FinalizationRegistry",
+#if mxFloat16
+	"Float16Array",
+#endif
 	"Float32Array",
 	"Float64Array",
 	"Int16Array",
@@ -1850,19 +1853,8 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"type",
 	"union",
 #endif
+#if mxFloat16
+	"getFloat16",
+	"setFloat16",
+#endif
 };
-
-#if mxCanonicalNaN
-
-#if mxBigEndian
-uint8_t gxCanonicalNaN32Bytes[4] = { 0x7F, 0xC0, 0, 0 };
-uint8_t gxCanonicalNaN64Bytes[8] = { 0x7F, 0xF8, 0, 0, 0, 0, 0, 0 };
-#else
-uint8_t gxCanonicalNaN32Bytes[4] = { 0, 0, 0xC0, 0x7F };
-uint8_t gxCanonicalNaN64Bytes[8] = { 0, 0, 0, 0, 0, 0, 0xF8, 0x7F };
-#endif
-
-float* gxCanonicalNaN32 = (float*)gxCanonicalNaN32Bytes;
-double* gxCanonicalNaN64 = (double*)gxCanonicalNaN64Bytes;
-
-#endif

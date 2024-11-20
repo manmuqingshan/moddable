@@ -100,7 +100,12 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #else
 	#define mxECMAScript2025Additions 0
 #endif
-#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions)
+#if mxFloat16
+	#define mxFloat16Additions 2
+#else
+	#define mxFloat16Additions 0
+#endif
+#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions)
 
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
@@ -663,6 +668,10 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_Set_prototype_isSupersetOf,
 	fx_Set_prototype_symmetricDifference,
 	fx_Set_prototype_union,
+#endif
+#if mxFloat16
+	fx_DataView_prototype_getFloat16,
+	fx_DataView_prototype_setFloat16,
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];
