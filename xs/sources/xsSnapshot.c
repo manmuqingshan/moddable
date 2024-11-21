@@ -105,7 +105,12 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #else
 	#define mxFloat16Additions 0
 #endif
-#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions)
+#if mxImmutableArrayBuffers
+	#define mxImmutableArrayBuffersAdditions 2
+#else
+	#define mxImmutableArrayBuffersAdditions 0
+#endif
+#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions + mxImmutableArrayBuffersAdditions)
 
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
@@ -673,6 +678,10 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_DataView_prototype_getFloat16,
 	fx_DataView_prototype_setFloat16,
 	fx_Math_f16round,
+#endif
+#if mxImmutableArrayBuffers
+	fx_ArrayBuffer_prototype_get_immutable,
+	fx_ArrayBuffer_prototype_transferToImmutable,
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];

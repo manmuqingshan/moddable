@@ -106,6 +106,7 @@
 #define mxSnapshot 1
 
 #define mxExplicitResourceManagement 1
+#define mxImmutableArrayBuffers 1
 #define mxModuleStuff 1
 
 #define mxMinusZero 1

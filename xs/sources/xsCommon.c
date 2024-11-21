@@ -1858,4 +1858,8 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"getFloat16",
 	"setFloat16",
 #endif
+#if mxImmutableArrayBuffers
+	"immutable",
+	"transferToImmutable",
+#endif
 };

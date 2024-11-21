@@ -83,6 +83,9 @@
 #ifndef mxFloat16
 	#define mxFloat16 1
 #endif
+#ifndef mxImmutableArrayBuffers
+	#define mxImmutableArrayBuffers 0
+#endif
 #ifndef mxModuleStuff
 	#define mxModuleStuff 0
 #endif
@@ -1289,6 +1292,10 @@ enum {
 	_f16round,
 	_getFloat16,
 	_setFloat16,
+#endif
+#if mxImmutableArrayBuffers
+	_immutable,
+	_transferToImmutable,
 #endif
 	XS_ID_COUNT
 };
