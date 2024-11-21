@@ -1159,7 +1159,6 @@ mxExport void fx_Math_cos(txMachine* the);
 mxExport void fx_Math_cosh(txMachine* the);
 mxExport void fx_Math_exp(txMachine* the);
 mxExport void fx_Math_expm1(txMachine* the);
-mxExport void fx_Math_f16round(txMachine* the);
 mxExport void fx_Math_floor(txMachine* the);
 mxExport void fx_Math_fround(txMachine* the);
 mxExport void fx_Math_hypot(txMachine* the);
@@ -1512,10 +1511,14 @@ extern void fxBigUint64Setter(txMachine* the, txSlot* data, txInteger offset, tx
 extern int fxFloat16Compare(const void* p, const void* q);
 extern void fxFloat16Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxFloat16Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
+mxExport void fx_Math_f16round(txMachine* the);
 #endif
 extern int fxFloat32Compare(const void* p, const void* q);
 extern void fxFloat32Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxFloat32Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
+#if mxCanonicalNaN
+	extern double* gxCanonicalNaN64;
+#endif
 extern int fxFloat64Compare(const void* p, const void* q);
 extern void fxFloat64Getter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);
 extern void fxFloat64Setter(txMachine* the, txSlot* data, txInteger offset, txSlot* slot, int endian);

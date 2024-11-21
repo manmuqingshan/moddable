@@ -57,6 +57,9 @@
 #ifndef mxAliasInstance
 	#define mxAliasInstance 1
 #endif
+#ifndef mxCanonicalNaN
+	#define mxCanonicalNaN 0
+#endif
 #ifndef mxHostFunctionPrimitive
 	#define mxHostFunctionPrimitive 1
 #endif
@@ -1309,12 +1312,6 @@ extern const txString gxIDStrings[XS_ID_COUNT];
 
 #ifndef mxIntegerDivideOverflowException
 	#define mxIntegerDivideOverflowException 1
-#endif
-
-#ifndef mxCanonicalNaN
-	#define mxCanonicalNaN 0
-#else
-	extern double* gxCanonicalNaN64;
 #endif
 
 #ifdef __cplusplus
