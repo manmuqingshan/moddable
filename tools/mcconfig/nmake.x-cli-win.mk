@@ -93,7 +93,6 @@ C_DEFINES = \
 	/D XS_ARCHIVE=1 \
 	/D INCLUDE_XSPLATFORM=1 \
 	/D XSPLATFORM=\"win_xs.h\" \
-	/D mxParse=1 \
 	/D mxStringInfoCacheLength=4 \
 	/D kModdableToolsVersion=\"$(TOOLS_VERSION)\"
 !IF "$(INSTRUMENT)"=="1"

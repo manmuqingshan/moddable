@@ -55,7 +55,6 @@ C_OPTIONS = \
 	/D mxMinusZero=1 \
 	/D mxModuleStuff=1 \
 	/D mxNoConsole=1 \
-	/D mxParse=1 \
 	/D mxProfile=1 \
 	/D mxSnapshot=1 \
 	/D mxRegExpUnicodePropertyEscapes=1 \

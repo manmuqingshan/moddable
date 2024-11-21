@@ -242,7 +242,6 @@ C_OPTIONS = \
 	/D INCLUDE_XSPLATFORM=1 \
 	/D XSPLATFORM=\"win_xs.h\" \
 	/D XSTOOLS=1 \
-	/D mxParse=1 \
 	/D mxStringInfoCacheLength=4 \
 	/D mxMessageWindowClass=\"fxMessageWindowClassX\" \
 	/D kModdableToolsVersion=\"$(TOOLS_VERSION)\" \

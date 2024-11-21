@@ -64,7 +64,6 @@ C_OPTIONS = \
 	-DmxMinusZero=1 \
 	-DmxModuleStuff=1 \
 	-DmxNoConsole=1 \
-	-DmxParse=1 \
 	-DmxProfile=1 \
 	-DmxSnapshot=1 \
 	-DmxRegExpUnicodePropertyEscapes=1 \

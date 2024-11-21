@@ -85,7 +85,6 @@ C_DEFINES = \
 	-DXS_ARCHIVE=1 \
 	-DINCLUDE_XSPLATFORM=1 \
 	-DXSPLATFORM=\"lin_xs.h\" \
-	-DmxParse=1 \
 	-DmxStringInfoCacheLength=4
 C_DEFINES += \
 	-Wno-misleading-indentation \

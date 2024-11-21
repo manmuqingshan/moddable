@@ -245,7 +245,6 @@ C_DEFINES = \
 	-DINCLUDE_XSPLATFORM=1 \
 	-DXSPLATFORM=\"lin_xs.h\" \
 	-DXSTOOLS=1 \
-	-DmxParse=1 \
 	-DmxStringInfoCacheLength=4 \
 	-DkModdableToolsVersion=\"$(TOOLS_VERSION)\"
 C_DEFINES += \

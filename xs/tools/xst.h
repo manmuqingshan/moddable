@@ -21,6 +21,8 @@
 #ifndef __XST__
 #define __XST__
 
+#define XS_NO_MODULE 1
+
 #if defined(_MSC_VER)
 	#if defined(_M_IX86) || defined(_M_X64) || defined(_M_ARM64) || defined(_M_ARM64EC)
 		#undef mxLittleEndian

@@ -91,7 +91,6 @@ C_DEFINES = \
 	/D INCLUDE_XSPLATFORM=1 \
 	/D XSPLATFORM=\"win_xs.h\" \
 	/D YAML_DECLARE_STATIC \
-	/D mxParse=1 \
 	/D mxStringInfoCacheLength=4 \
 	/D mxMessageWindowClass=\"fxMessageWindowClassX\"
 !IF "$(INSTRUMENT)"=="1"

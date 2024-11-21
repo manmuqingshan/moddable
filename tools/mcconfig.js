@@ -389,12 +389,6 @@ class CMakeListsFile extends PrerequisiteFile {
 			this.line("\tmxDebug=1");
 			this.line("\tmxInstrument=1");
 		}
-		this.line("\tmxRun=1");
-		this.line("\tmxParse=1");
-		this.line("\tmxNoFunctionLength=1");
-		this.line("\tmxNoFunctionName=1");
-		this.line("\tmxHostFunctionPrimitive=1");
-		this.line("\tmxFewGlobalsTable=1");
 		this.line(")");
 		
 		this.line("target_include_directories(tech-moddable-piu PUBLIC");
@@ -614,12 +608,6 @@ class XcodeFile extends PrerequisiteFile {
 			this.line("\t\t\t\t\t\"mxDebug=1\",");
 			this.line("\t\t\t\t\t\"mxInstrument=1\",");
 		}
-		this.line("\t\t\t\t\t\"mxRun=1\",");
-		this.line("\t\t\t\t\t\"mxParse=1\",");
-		this.line("\t\t\t\t\t\"mxNoFunctionLength=1\",");
-		this.line("\t\t\t\t\t\"mxNoFunctionName=1\",");
-		this.line("\t\t\t\t\t\"mxHostFunctionPrimitive=1\",");
-		this.line("\t\t\t\t\t\"mxFewGlobalsTable=1\",");
 		template = template.replace(/#GCC_PREPROCESSOR_DEFINITIONS#/g, this.current);
 		
 		this.current = ""
