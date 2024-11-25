@@ -215,7 +215,9 @@ void fxBuildModule(txMachine* the)
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_ModuleSource_prototype_get_bindings), C_NULL, mxID(_bindings), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_ModuleSource_prototype_get_needsImport), C_NULL, mxID(_needsImport), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_ModuleSource_prototype_get_needsImportMeta), C_NULL, mxID(_needsImportMeta), XS_DONT_ENUM_FLAG);
+#if mxECMAScript2025	
 	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_ModuleSource_prototype_get_options), C_NULL, mxID(_options), XS_DONT_ENUM_FLAG);
+#endif
 	slot = fxNextStringXProperty(the, slot, "ModuleSource", mxID(_Symbol_toStringTag), XS_DONT_ENUM_FLAG | XS_DONT_SET_FLAG);
 	mxModuleSourcePrototype = *the->stack;
 	slot = fxBuildHostConstructor(the, mxCallback(fx_ModuleSource), 1, mxID(_ModuleSource));
@@ -253,6 +255,7 @@ void fxCheckModuleFlag(txMachine* the, txID moduleID, txFlag moduleFlag, txFlag 
 
 void fxPushModuleOptions(txMachine* the, txFlag moduleFlag)
 {
+#if mxECMAScript2025	
 	if (moduleFlag & XS_JSON_MODULE_FLAG) {
 		txSlot* optionsInstance = fxNewObject(the);
 		txSlot* withInstance = fxNewObject(the);
@@ -261,12 +264,14 @@ void fxPushModuleOptions(txMachine* the, txFlag moduleFlag)
 		fxNextStringProperty(the, withInstance, "json", mxID(_type), XS_NO_FLAG);
 	}
 	else
+#endif
 		mxPushUndefined();
 }
 
 txFlag fxCheckModuleOptions(txMachine* the, txSlot* options)
 {
 	txFlag moduleFlag = XS_NO_FLAG;
+#if mxECMAScript2025	
 	if (!mxIsUndefined(options)) {
 		txSlot* with;
 		if (!mxIsReference(options))
@@ -308,6 +313,7 @@ txFlag fxCheckModuleOptions(txMachine* the, txSlot* options)
 		}
 		mxPop();
 	}
+#endif
 	return moduleFlag;
 }
 

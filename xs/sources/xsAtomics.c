@@ -280,14 +280,16 @@ txSlot* fxCheckAtomicsTypedArray(txMachine* the, txBoolean onlyInt32)
 			mxTypeError("typedArray: not an Int32Array instance");
 	}
 	else {
-		if (id == _Float16Array)
-			mxTypeError("typedArray: Float16Array instance");
-		else if (id == _Float32Array)
+		if (id == _Float32Array)
 			mxTypeError("typedArray: Float32Array instance");
 		else if (id == _Float64Array)
 			mxTypeError("typedArray: Float64Array instance");
 		else if (id == _Uint8ClampedArray)
 			mxTypeError("typedArray: Uint8ClampedArray instance");
+	#if mxFloat16
+		else if (id == _Float16Array)
+			mxTypeError("typedArray: Float16Array instance");
+	#endif
 	}
 	return slot;
 }
