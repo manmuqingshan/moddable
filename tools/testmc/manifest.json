@@ -20,7 +20,9 @@
 		"$(MODDABLE)/modules/piu/MC/colorcell/manifest.json",
 		"$(MODDABLE)/modules/io/flash/manifest.json",
 		"$(MODDABLE)/modules/files/storage/manifest.json",
-		"$(MODDABLE)/modules/io/audioout/manifest.json"
+		"$(MODDABLE)/modules/io/audioout/manifest.json",
+		"$(MODDABLEPROJECTS)/modules/io/update/manifest.json",
+		"$(MODDABLEPROJECTS)/modules/io/flash/manifest.json"
 	],
 	"modules": {
 		"*": [
@@ -49,7 +51,7 @@
 			"config": {
 				"flash": {
 					"xs_test": { "blocks":10, "blockLength":1024 },
-					"running": { "blocks":20, "blockLength":1024 },
+					"running": { "blocks":20, "blockLength":1024, "bytes":[ 249 ] },
 					"nextota": { "blocks":10, "blockLength":1024 }
 				}
 			}

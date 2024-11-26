@@ -2,19 +2,9 @@
 #include "mc.xs.h"
 #include "mc.defines.h"
 #include "builtinCommon.h"
+#include "flash-mac.h"
 
 #import <Cocoa/Cocoa.h>
-
-struct xsFlashRecord {
-	xsIntegerValue size;
-	xsIntegerValue blocks;
-	xsIntegerValue blockLength;
-	xsBooleanValue readOnly;
-	int fd;
-	uint8_t* bytes;
-};
-typedef struct xsFlashRecord xsFlashRecord;
-typedef struct xsFlashRecord *xsFlash;
 
 void xs_flash_partition_destructor(void *it)
 {
@@ -192,6 +182,20 @@ void xs_flash_partition_open(xsMachine *the)
 	flash->bytes = mmap(NULL, flash->size, PROT_READ|PROT_WRITE, MAP_SHARED, flash->fd, 0);
 	if (flash->bytes == MAP_FAILED)
 		xsUnknownError(strerror(errno));
+		
+	if (xsmcHas(xsVar(1), xsID_bytes)) {
+		xsIntegerValue length, index, byte;
+		xsmcGet(xsVar(1), xsVar(1), xsID_bytes);
+		xsmcGet(xsVar(0), xsVar(1), xsID_length);
+		length = xsmcToInteger(xsVar(0));
+		if (length > flash->size)
+			length = flash->size;
+		for (index = 0; index < length; index++) {
+			xsmcGetIndex(xsVar(0), xsVar(1), index);
+			byte = xsmcToInteger(xsVar(0));
+			flash->bytes[index] = (uint8_t)byte;
+		}
+	}
 	
 	xsResult = xsNewHostInstance(xsArg(1));
 	xsmcSetHostData(xsResult, flash);
