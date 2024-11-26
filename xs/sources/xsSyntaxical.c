@@ -2330,10 +2330,10 @@ void fxLiteralExpression(txParser* parser, txUnsigned flag)
 		escaped = parser->states[0].escaped;
 		aSymbol = parser->states[0].symbol;
 		fxGetNextToken(parser);
-		if (aSymbol == parser->undefinedSymbol) {
-			fxPushNodeStruct(parser, 0, XS_TOKEN_UNDEFINED, aLine);
-			break;
-		}
+// 		if (aSymbol == parser->undefinedSymbol) {
+// 			fxPushNodeStruct(parser, 0, XS_TOKEN_UNDEFINED, aLine);
+// 			break;
+// 		}
 		flags = 0;
 		if ((aSymbol == parser->asyncSymbol) && (!escaped) && (!parser->states[0].crlf)) {
 			if (parser->states[0].token == XS_TOKEN_FUNCTION) {
