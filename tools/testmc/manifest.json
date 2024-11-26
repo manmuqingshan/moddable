@@ -48,7 +48,9 @@
 		"mac": {
 			"config": {
 				"flash": {
-					"xs_test": { "blocks":10, "blockLength":1024 }
+					"xs_test": { "blocks":10, "blockLength":1024 },
+					"running": { "blocks":20, "blockLength":1024 },
+					"nextota": { "blocks":10, "blockLength":1024 }
 				}
 			}
 		},
