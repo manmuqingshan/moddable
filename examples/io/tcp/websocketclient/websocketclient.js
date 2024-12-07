@@ -28,6 +28,7 @@ class WebSocketClient {
 	#line;
 	#data;
 	#writable = 0;
+	#mask;			// write mask
 
 	constructor(options) {
 		this.#options = {
@@ -49,6 +50,8 @@ class WebSocketClient {
 			this.#state = "connected";
 			return;
 		}
+
+		this.#mask = new Uint8Array(4);		// client, so mask (attach case is server, so no mask)
 
 		this.#options.host = options.host; 
 		this.#options.path = options.path; 
@@ -95,8 +98,11 @@ class WebSocketClient {
 		delete this.#options.pending;
 	}
 	write(data, options) {
+		const mask = this.#mask;
 		const byteLength = data.byteLength;
-		if (("connected" !== this.#state) || (byteLength > 65535) || ((byteLength + 8) > this.#writable))
+		const header = ((byteLength < 126) ? 2 : ((byteLength < 65536) ? 4 : 10)) + (mask ? 4 : 0);
+		const total = byteLength + header;
+		if (("connected" !== this.#state) || (total > this.#writable))
 			throw new Error;
 
 		let type;
@@ -119,27 +125,48 @@ class WebSocketClient {
 			delete this.#options.fragmentedWrite;
 		}
 
-		data = data.slice(0);
-		const mask = Uint8Array.of(Math.random() * 256, Math.random() * 256, Math.random() * 256, Math.random() * 256);
-		Logical.xor(data, mask.buffer);
-		const format = this.#socket.format;
-		this.#socket.format = "buffer";
-		let prefix;
-		if (byteLength < 126) {
-			prefix = Uint8Array.of(type, byteLength | 0x80, mask[0], mask[1], mask[2], mask[3]);
-			this.#writable -= (6 + byteLength);
+		if (ArrayBuffer.isView(data)) {
+			if (data.BYTES_PER_ELEMENT > 1)
+				throw new TypeError;		// not a Byte Buffer
+		}
+		else
+			data = new Uint8Array(data);
+		const payload = new Uint8Array(total);
+		payload[0] = type;
+		if (byteLength < 126)
+			payload[1] = byteLength;
+		else if (byteLength < 65536) {
+			payload[1] = 126;
+			payload[2] = byteLength >> 8;
+			payload[3] = byteLength;
 		}
 		else {
-			prefix = Uint8Array.of(type, 126 | 0x80, byteLength >> 8, byteLength, mask[0], mask[1], mask[2], mask[3]);
-			this.#writable -= (8 + byteLength);
+			payload[1] = 127;
+			payload[2] = 0;
+			payload[3] = byteLength >> 48;
+			payload[4] = byteLength >> 40;
+			payload[5] = byteLength >> 32;
+			payload[6] = byteLength >> 24;
+			payload[7] = byteLength >> 16;
+			payload[8] = byteLength >> 8;
+			payload[9] = byteLength;
 		}
-		if (ArrayBuffer.isView(data))
-			data = data.buffer.slice(data.byteOffset, data.byteOffset + byteLength);
-		data = prefix.buffer.concat(data);
-		const writable = this.#socket.write(data);
-		this.#writable = (writable === undefined) ? this.#writable - data.byteLength : writable;
-		
-		this.#socket.format = format;
+
+		payload.set(data, header);		//@@ incorrect if data is Int8Array or DataView... native function to copy with optional mask?
+		if (mask) {
+			payload[1] |= 0x80;
+
+			mask[0] = Math.random() * 256;
+			mask[1] = Math.random() * 256;
+			mask[2] = Math.random() * 256;
+			mask[3] = Math.random() * 256;
+			Logical.xor(payload.subarray(header), mask.buffer);
+			payload.set(mask, header - 4);
+		}
+
+		this.#socket.format = "buffer";
+		let writable = this.#socket.write(payload);
+		this.#writable = (writable === undefined) ? this.#writable - total : writable;
 
 		if (0x88 === type) {		// close
 			if (this.#options.close & 2) {		// if we already received close, connection shuts down cleanly
@@ -150,10 +177,11 @@ class WebSocketClient {
 				this.#state = "closing";
 			}
 			else 
-				this.#options.close = 1;		// set 1 to indicate that we've send close
+				this.#options.close = 1;		// set 1 to indicate that we've sent close
 		}
 
-		return (this.#writable > 8) ? (this.#writable - 8) : 0;
+		writable = this.#writable - (2 + 8 + (mask ? 4 : 0));
+		return (writable > 0) ? writable : 0;
 	}
 	read(count) {
 		if (!this.#data)
