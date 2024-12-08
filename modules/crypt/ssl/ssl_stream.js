@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -42,10 +42,14 @@ class SSLStream {
 
 	constructor(buffer) {
 		if (buffer) {
-			if (!(buffer instanceof Uint8Array))
+			if (ArrayBuffer.isView(buffer)) {
+				if (!(buffer instanceof Uint8Array))
+					throw new Error;
+			}
+			else
 				buffer = new Uint8Array(buffer);
 			this.#bytes = buffer;
-			this.#write = this.#bytes.length;
+			this.#write = buffer.length;
 		}
 		else {
 			this.#bytes = new Uint8Array(new ArrayBuffer(32, {maxByteLength: 0x10000000}));
@@ -64,7 +68,7 @@ class SSLStream {
 		if (this.#write + n > this.#bytes.length)
 			this.morebuf(n);
 		while (--n >= 0)
-			this.#bytes[this.#write++] = (v >>> (n * 8)) & 0xff;
+			this.#bytes[this.#write++] = v >>> (n * 8);
 	}
 	writeChunk(a) {
 		const n = a.byteLength;
@@ -76,14 +80,7 @@ class SSLStream {
 		this.#write += n;
 	}
 	writeString(s) {
-		s = ArrayBuffer.fromString(s);
-		const n = s.byteLength;
-		if (n <= 0)
-			return;
-		if (this.#write + n > this.#bytes.length)
-			this.morebuf(n);
-		this.#bytes.set(new Uint8Array(s), this.#write);
-		this.#write += n;
+		this.writeChunk(ArrayBuffer.fromString(s));
 	}
 	readChar() {
 		return this.#read < this.#write ? this.#bytes[this.#read++] : undefined;
@@ -97,29 +94,26 @@ class SSLStream {
 		return v;
 	}
 	readChunk(n, reference) {
-		if (this.#read + n > this.#write)
-			return undefined;
-
-		let result;
-		if (reference)
-			result = new Uint8Array(this.#bytes.buffer, this.#bytes.byteOffset + this.#read, n);
-		else
-			result = this.#bytes.slice(this.#read, this.#read + n).buffer;
+		const read = this.#read;
+		if (read + n > this.#write)
+			return;
 
 		this.#read += n;
+		if (reference)
+			return this.#bytes.subarray(read, read + n);
 
-		return result;
+		return this.#bytes.slice(read, read + n).buffer;
 	}
 	getChunk() {
-		let bytes = this.#bytes;
+		const bytes = this.#bytes;
 		this.#bytes = undefined;
 		if (bytes.i) {
 			delete bytes.i;
-			bytes.buffer.resize(this.#write); 
+			bytes.buffer.resize(this.#write);
+			return bytes;
 		}
-		else
-			bytes = new Uint8Array(bytes.buffer, bytes.byteOffset, this.#write);
-		return bytes;
+
+		return bytes.slice(0, this.#write);
 	}
 	get bytesAvailable() {
 		return this.#write - this.#read;
