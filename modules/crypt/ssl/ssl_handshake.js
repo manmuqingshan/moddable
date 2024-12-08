@@ -189,10 +189,11 @@ const handshakeProtocol = {
 	},
 	packetize(session, msgType, body) {
 		session.traceProtocol(this);
-		let s = new SSLStream();
+		body = body.getChunk();
+		let s = new SSLStream(undefined, 1 + 3 + body.byteLength);
 		s.writeChar(msgType);
-		s.writeChars(body.bytesWritten, 3);
-		s.writeChunk(body.getChunk());
+		s.writeChars(body.byteLength, 3);
+		s.writeChunk(body);
 		let msg = s.getChunk();
 		handshakeDigestUpdate(session, msg);
 		return recordProtocol.packetize(session, recordProtocol.handshake, msg);

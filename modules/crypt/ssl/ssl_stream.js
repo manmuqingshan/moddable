@@ -40,7 +40,7 @@ class SSLStream {
 	#read = 0;
 	#bytes;
 
-	constructor(buffer) {
+	constructor(buffer, initial) {
 		if (buffer) {
 			if (ArrayBuffer.isView(buffer)) {
 				if (!(buffer instanceof Uint8Array))
@@ -52,7 +52,7 @@ class SSLStream {
 			this.#write = buffer.length;
 		}
 		else {
-			this.#bytes = new Uint8Array(new ArrayBuffer(32, {maxByteLength: 0x10000000}));
+			this.#bytes = new Uint8Array(new ArrayBuffer(initial ?? 32, {maxByteLength: 0x10000000}));
 			this.#bytes.i = true;
 		}
 	}
