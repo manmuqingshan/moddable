@@ -116,9 +116,10 @@ class TLSSocket {
 
 		return result;
 	}
-	write(buffer) {
-		this.#session.write(this.#socket, buffer);
-		return Math.max(0, this.#socket.writable - 96);		// not quite standard... like network protocols needed by client
+	write(buffer, options) {
+		if (buffer instanceof DataView)
+			buffer = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+		return this.#session.write(this.#socket, buffer, options);
 	}
 	set format(format) {
 		this.#format = format === "buffer";

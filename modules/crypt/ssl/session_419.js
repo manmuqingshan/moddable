@@ -43,12 +43,14 @@ import cacheManager from "ssl/cache";
 import CertificateManager from "ssl/cert";
 import TLSError from "ssl/error";
 import Bin from "bin";
+import SSLStream from "ssl/stream";
 import {minProtocolVersion, maxProtocolVersion, protocolVersion} from "ssl/constants";
 import {DHE_DSS, DHE_RSA, ECDHE_RSA, RSA, AES, CBC, DES, GCM, MD5, NONE, RC4, SHA1, SHA256, SHA384, TDES} from "ssl/constants";
 
 const maxFragmentSize = 16384	// maximum record layer framgment size (not a packet size): 2^14
 
 class SSLSession {
+	#buffer;
 	constructor(options) {
 		options = {...options};	// shallow copy so it can be safely modified
 
@@ -206,13 +208,25 @@ class SSLSession {
 			}
 		}
 	}
-	write(s, data) {
+	write(s, data, options) {
+		if (options?.more) {
+			this.#buffer ??= new SSLStream(undefined, options.byteLength);
+			this.#buffer.writeChunk(data);
+			return Math.max(0, s.writable - this.#buffer.bytesAvailable - 32);
+		}
+		if (this.#buffer) {
+			this.#buffer.writeChunk(data);
+			data = this.#buffer.getChunk();
+			this.#buffer = undefined;
+		}
+
 		if (data.byteLength > maxFragmentSize)
-			return -1;	// too large
+			throw new Error("too large");
 		this.startTrace("packetize");
 		const packet = recordProtocol.packetize(this, recordProtocol.application_data, data);
 		s.write(packet);
 		s.writable -= packet.byteLength;
+		return Math.max(0, s.writable - 32);
 	}
 	close(s) {
 		this.startTrace("packetize");
@@ -223,10 +237,9 @@ class SSLSession {
 	doProtocol(s, protocol, param1, param2) {
 		this.startTrace("packetize");
 		const packet = protocol.packetize(this, param1, param2);
-		if (packet) {
-			s.write(packet);
-			s.writable -= packet.byteLength; 
-		}
+		if (!packet) return;
+		s.write(packet);
+		s.writable -= packet.byteLength; 
 	}
 	readPacket(s) {
 		let packetBuffer = this.packetBuffer;
@@ -268,9 +281,6 @@ class SSLSession {
 		this.packetBuffer = null;
 		return packetBuffer.buffer;
 	}
-//	get bytesAvailable() {
-//		return this.applicationData ? (this.applicationData.end - this.applicationData.position) : 0;
-//	}
 	putData(data) {
 		this.applicationData = data;
 		data.position = data.byteOffset;

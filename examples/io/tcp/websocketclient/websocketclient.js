@@ -90,12 +90,13 @@ class WebSocketClient {
 		this.#state = "closed";
 		this.#socket?.close();
 		this.#socket = undefined;
-		Timer.clear(this.#options.closer);
-		Timer.clear(this.#options.timer);
-		Timer.clear(this.#options.pending);
-		delete this.#options.timer;
-		delete this.#options.closer;
-		delete this.#options.pending;
+		const options = this.#options;
+		Timer.clear(options.closer);
+		Timer.clear(options.timer);
+		Timer.clear(options.pending);
+		delete options.timer;
+		delete options.closer;
+		delete options.pending;
 	}
 	write(data, options) {
 		const mask = this.#mask;
@@ -184,6 +185,8 @@ class WebSocketClient {
 		return (writable > 0) ? writable : 0;
 	}
 	read(count) {
+//@@ should allow count to be a buffer
+//@@ should support format of number
 		if (!this.#data)
 			return;
 		
