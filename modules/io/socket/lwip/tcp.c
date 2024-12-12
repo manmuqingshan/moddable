@@ -404,6 +404,8 @@ void xs_tcp_write(xsMachine *the)
 	tcpTrigger(tcp, kTCPOutput);
 
 	modInstrumentationAdjust(NetworkBytesWritten, needed);
+	
+	xsmcSetInteger(xsResult, tcp_sndbuf(tcp->skt));
 }
 
 void xs_tcp_get_remoteAddress(xsMachine *the)
