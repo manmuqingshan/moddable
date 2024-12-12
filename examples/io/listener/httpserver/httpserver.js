@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022  Moddable Tech, Inc.
+ * Copyright (c) 2021-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -19,6 +19,8 @@
  */
  
 import Timer from "timer";
+
+const more = Object.freeze({more: true});
 
 class Connection {
 	#server;
@@ -135,10 +137,9 @@ class Connection {
 			if ((byteLength + 8) > this.#writable)
 				throw new Error("too much");
 
-			this.#writable -= byteLength + 8;
-			this.#socket.write(ArrayBuffer.fromString(byteLength.toString(16).padStart(4, "0") + "\r\n"));
-			this.#socket.write(data);
-			this.#socket.write(ArrayBuffer.fromString("\r\n"));
+			this.#socket.write(ArrayBuffer.fromString(byteLength.toString(16).padStart(4, "0") + "\r\n"), more);
+			this.#socket.write(data, more);
+			this.#writable = this.#socket.write(ArrayBuffer.fromString("\r\n"));
 
 			return (this.#writable > 8) ? (this.#writable - 8) : 0 
 		}
@@ -146,8 +147,7 @@ class Connection {
 			if ((byteLength > this.#writable) || (byteLength > this.#remaining))
 				throw new Error("too much");
 
-			this.#writable -= byteLength;
-			this.#socket.write(data);
+			this.#writable = this.#socket.write(data);
 
 			this.#remaining -= byteLength;
 			if (0 === this.#remaining) {
@@ -275,15 +275,13 @@ class Connection {
 			if (this.#pendingWrite) {
 				let use = this.#pendingWrite.byteLength - this.#writePosition;
 				if (use > count) {
-					this.#socket.write(new Uint8Array(this.#pendingWrite, this.#writePosition, count));
+					this.#writable = this.#socket.write(new Uint8Array(this.#pendingWrite, this.#writePosition, count));
 					this.#writePosition += count;
-					this.#writable = 0;
 					return;
 				}
 				
-				this.#socket.write(this.#pendingWrite);
+				this.#writable = this.#socket.write(this.#pendingWrite);
 				this.#pendingWrite = undefined;
-				this.#writable -= use;
 			}
 
 			switch (this.#state) {
@@ -317,7 +315,7 @@ class Connection {
 					} break;
 
 				case "sendResponseBody": {
-					if (0 === this.#remaining) {
+					if ((0 === this.#remaining) || (undefined === this.#remaining)) {
 						this.#done();
 						return;
 					}
