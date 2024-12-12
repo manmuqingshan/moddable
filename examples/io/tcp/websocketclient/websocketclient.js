@@ -166,8 +166,7 @@ class WebSocketClient {
 		}
 
 		this.#socket.format = "buffer";
-		let writable = this.#socket.write(payload);
-		this.#writable = (writable === undefined) ? this.#writable - total : writable;
+		this.#writable = this.#socket.write(payload);
 
 		if (0x88 === type) {		// close
 			if (this.#options.close & 2) {		// if we already received close, connection shuts down cleanly
@@ -181,7 +180,7 @@ class WebSocketClient {
 				this.#options.close = 1;		// set 1 to indicate that we've sent close
 		}
 
-		writable = this.#writable - (2 + 8 + (mask ? 4 : 0));
+		const writable = this.#writable - (2 + 8 + (mask ? 4 : 0));
 		return (writable > 0) ? writable : 0;
 	}
 	read(count) {
@@ -489,8 +488,7 @@ class WebSocketClient {
 
 				//@@ if headers exceed count, send in pieces
 				message = ArrayBuffer.fromString(message.join("\r\n"));
-				this.#socket.write(message); 
-				this.#writable -= message.byteLength;
+				this.#writable = this.#socket.write(message); 
 
 				this.#state = "receiveStatus"
 				this.#line = "";
