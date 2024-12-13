@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023  Moddable Tech, Inc.
+ * Copyright (c) 2021-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -325,7 +325,7 @@ export class Client {
 		const retain = options?.retain ?? false;
 		const duplicate = options?.dup ?? false;
 		const id = ++this.#id;
-		let data, ack;
+		let data;
 		if (message instanceof ArrayBuffer)
 			data = message;
 		else if ((message instanceof DataView) || (message instanceof TypedArray))
@@ -509,7 +509,6 @@ export class Client {
 	}
 	#restore(republish) {
 		const acks = this.#acks;
-		const buffers = this.#buffers;
 		this.#acks = [];
 		this.#buffers = [];
 		const items = this.#subscriptions;

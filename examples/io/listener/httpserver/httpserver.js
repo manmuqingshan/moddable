@@ -23,7 +23,6 @@ import Timer from "timer";
 const more = Object.freeze({more: true});
 
 class Connection {
-	#server;
 	#socket;
 	#from;
 	#readable;
@@ -38,8 +37,7 @@ class Connection {
 	#route;
 	#timer;
 
-	constructor(server, from, done) {
-		this.#server = server;
+	constructor(from, done) {
 		this.#from = from;
 		this.#options.done = done;			
 	}
@@ -417,7 +415,7 @@ class HTTPServer {
 			onReadable(count) {
 				while (count--) {
 					try {
-						const connection = new Connection(this, this.read(), connection => this.target.#connections.delete(connection));
+						const connection = new Connection(this.read(), connection => this.target.#connections.delete(connection));
 						this.target.#onConnect(connection);
 					}
 					catch {

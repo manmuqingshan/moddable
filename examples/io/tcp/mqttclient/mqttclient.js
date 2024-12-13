@@ -725,10 +725,10 @@ class MQTTClient {
 		const options = this.#options, keepalive = options.keepalive, interval = keepalive.interval;
 		const now = Time.ticks;
 
-		if (Time.delta(keepalive.read, now) >= (keepalive.interval + (keepalive.interval >> 1)))
+		if (Time.delta(keepalive.read, now) >= (interval + (interval >> 1)))
 			return void this.#onError("time out");	// no control packet received in 1.5x keepalive interval (expected PINGRESP)
 
-		if (Time.delta(keepalive.write, now) < (((keepalive.interval >> 2) * 3) - 500))
+		if (Time.delta(keepalive.write, now) < (((interval >> 2) * 3) - 500))
 			return;
 
 		// haven't sent a ping in (just under) 3/4 the keep alive interval
@@ -804,6 +804,7 @@ function writeRemainingLength(socket, length, options) {
 		socket.write(Uint8Array.of(0x80 | (length & 0x7F), 0x80 | ((length >> 7) & 0x7F), 0x80 | ((length >> 14) & 0x7F), length >> 21), options);
 }
 
+/*
 function getBuffer(buffer) {
 	const position = buffer.position;
 	const length = (buffer[position] << 8) | buffer[position + 1];
@@ -811,5 +812,6 @@ function getBuffer(buffer) {
 	buffer.position += 2 + length;
 	return result;
 }
+*/
 
 export default MQTTClient;

@@ -435,7 +435,6 @@ class WebSocketClient {
 						else
 							return void this.#onError();
 
-
 						delete options.tag;
 						delete options.control;
 						delete options.length;
