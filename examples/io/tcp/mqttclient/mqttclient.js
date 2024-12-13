@@ -64,6 +64,11 @@ class MQTTClient {
 	#id = 1;
 
 	constructor(options) {
+		this.format = options.format ?? BufferFormat;
+		const target = options.target;
+		if (undefined !== target)
+			this.target = target;
+
 		this.#options = {
 			host: options.host,
 			port: options.port,
@@ -128,6 +133,13 @@ class MQTTClient {
 		this.#readable = 0;
 		this.#payload = 0;
 		this.#options = undefined;
+	}
+	set format(value) {
+		if (BufferFormat !== value)
+			throw new RangeError;
+	}
+	get format() {
+		return BufferFormat;
 	}
 	write(data, options) {
 		const socket = this.#socket;
