@@ -224,15 +224,13 @@ class SSLSession {
 			throw new Error("too large");
 		this.startTrace("packetize");
 		const packet = recordProtocol.packetize(this, recordProtocol.application_data, data);
-		s.write(packet);
-		s.writable -= packet.byteLength;
+		s.writable = s.write(packet);
 		return Math.max(0, s.writable - 32);
 	}
 	close(s) {
 		this.startTrace("packetize");
 		const packet = SSLAlert.packetize(this, 0, SSLAlert.close_notify);
-		s.write(packet);
-		s.writable -= packet.byteLength
+		s.writable = s.write(packet);
 	}
 	doProtocol(s, protocol, param1, param2) {
 		this.startTrace("packetize");
