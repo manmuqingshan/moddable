@@ -18,8 +18,17 @@
  *
  */
  
+ /*
+	To do:
+	
+		- minimize setting of #socket.format
+*/
+
 import Timer from "timer";
 import Logical from "logical";
+
+const BufferFormat = "buffer";
+const NumberFormat = "number";
 
 class WebSocketClient {
 	#socket;
@@ -27,6 +36,7 @@ class WebSocketClient {
 	#state;
 	#line;
 	#data;
+	#format;		// true for number, false for buffer
 	#writable = 0;
 	#mask;			// write mask
 
@@ -38,6 +48,11 @@ class WebSocketClient {
 			onClose: options.onClose,
 			onError: options.onError,
 		};
+
+		this.format = options.format ?? BufferFormat;
+		const target = options.target;
+		if (undefined !== target)
+			this.target = target;
 
 		const attach = options.attach;
 		if (attach) {
@@ -169,7 +184,7 @@ class WebSocketClient {
 			payload.set(mask, header - 4);
 		}
 
-		this.#socket.format = "buffer";
+		this.#socket.format = BufferFormat;
 		this.#writable = this.#socket.write(payload);
 
 		if (0x88 === type) {		// close
@@ -188,42 +203,61 @@ class WebSocketClient {
 		return (writable > 0) ? writable : 0;
 	}
 	read(count) {
-//@@ should allow count to be a buffer
-//@@ should support format of number
 		if (!this.#data)
 			return;
-		
-		if ((undefined === count) || (count > this.#data))
+
+		if (this.#format) {
+			this.#data--;
+			this.#socket.format = NumberFormat;
+			return this.#socket.read();
+		}
+
+		this.#socket.format = BufferFormat;
+
+		if (undefined === count)
 			count = this.#data;
 
-		const data = this.#socket.read(count);
+		let data, result;
+
+		if (NumberFormat === typeof count) {
+			if (count > this.#data)
+				count = this.#data;
+
+			data = result = this.#socket.read(count);
+		}
+		else {
+			data = count;
+			count = result = this.#socket.read(data);
+		}
 		this.#data -= count;
-		if (this.#options.mask) {
-			const mask = this.#options.mask;
-			Logical.xor(data, mask.buffer);
+
+		const options = this.#options;
+		if (options.mask) {
+			const mask = options.mask;
+			Logical.xor(data, mask, count);
 			if (this.#data) {
 				switch (count & 3) {
 					case 1:
-						this.#options.mask = Uint8Array.of(mask[1], mask[2], mask[3], mask[0]);
+						options.mask = Uint8Array.of(mask[1], mask[2], mask[3], mask[0]);
 						break;
 					case 2:
-						this.#options.mask = Uint8Array.of(mask[2], mask[3], mask[0], mask[1]);
+						options.mask = Uint8Array.of(mask[2], mask[3], mask[0], mask[1]);
 						break;
 					case 3:
-						this.#options.mask = Uint8Array.of(mask[3], mask[0], mask[1], mask[2]);
+						options.mask = Uint8Array.of(mask[3], mask[0], mask[1], mask[2]);
 						break;
 				}
 			}
 		}
-		
-		if (!this.#data && this.#options.unread) {	// finished this message and have unread data pending on socket
-			this.#options.timer = Timer.set(() => {
+
+		if (!this.#data && options.unread) {	// finished this message and have unread data pending on socket
+			options.timer = Timer.set(() => {
 				delete this.#options.timer;
 				this.#onReadable(this.#options.unread);
 			});
 		}
 
-		return data;
+		return result;
 	}
 	#onReadable(count) {
 		switch (this.#state) {
@@ -255,7 +289,7 @@ class WebSocketClient {
 							return void this.#onError();
 						this.#state = "connected";
 						delete this.#options.flags;
-						this.#socket.format = "buffer";
+						this.#socket.format = BufferFormat;
 
 						if (this.#writable > 8)
 							this.#options.onWritable?.call(this, this.#writable - 8);
@@ -292,7 +326,7 @@ class WebSocketClient {
 
 				while (count) {
 					if (undefined === options.tag) {
-						this.#socket.format = "number";
+						this.#socket.format = NumberFormat;
 						let tag = options.tag = this.#socket.read();
 						count--;
 
@@ -410,7 +444,7 @@ class WebSocketClient {
 
 					if (!options.ready) {
 						options.ready = true;
-						this.#socket.format = "buffer";
+						this.#socket.format = BufferFormat;
 						let length = options.length[0];
 						if (127 === length) {
 							let i = 1;
@@ -497,7 +531,7 @@ class WebSocketClient {
 				this.#state = "receiveStatus"
 				this.#line = "";
 				options.flags = 0;
-				this.#socket.format = "number";
+				this.#socket.format = NumberFormat;
 				} break;
 			
 			case "connected":
@@ -525,6 +559,17 @@ class WebSocketClient {
 			this.#options.onClose?.call(this);
 		else
 			this.#options.onError?.call(this);
+	}
+	get format() {
+		return this.#format ? NumberFormat : BufferFormat;
+	}
+	set format(value) {
+		if (BufferFormat === value)
+			this.#format = false;
+		else if (NumberFormat === value)
+			this.#format = true;
+		else
+			throw new RangeError;
 	}
 	
 	static text = 1;
