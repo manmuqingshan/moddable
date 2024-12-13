@@ -112,7 +112,7 @@ class WebSocketClient {
 			if (undefined !== opcode)
 				type = 0x80 | opcode;
 			else {
-				type = this.#options.fragmentedWrite ? 0 : (options.binary ? 2 : 1);
+				type = this.#options.fragmentedWrite ? 0 : ((options.binary ?? true) ? 2 : 1);
 				if (options.more)
 					this.#options.fragmentedWrite = true;
 				else {
@@ -122,8 +122,12 @@ class WebSocketClient {
 			}
 		}
 		else {
-			type = 0x81;
-			delete this.#options.fragmentedWrite;
+			if (this.#options.fragmentedWrite) {
+				type = 0x80;
+				delete this.#options.fragmentedWrite;
+			}
+			else
+				type = 0x82;
 		}
 
 		if (ArrayBuffer.isView(data)) {
