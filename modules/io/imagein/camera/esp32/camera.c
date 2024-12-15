@@ -112,15 +112,17 @@ struct FramesizeRecord {
 typedef struct FramesizeRecord FramesizeRecord;
 typedef struct FramesizeRecord *Framesize;
 
-#define MAX_FRAMESIZES (22)
+#define MAX_FRAMESIZES (25)
 // ordered by width, then by height
 static FramesizeRecord FrameSizes[MAX_FRAMESIZES] = {
     FRAMESIZE_96X96,   96, 96,
+    FRAMESIZE_128X128, 128, 128,
     FRAMESIZE_QQVGA,   160, 120,
     FRAMESIZE_QCIF,    176, 144,
     FRAMESIZE_HQVGA,   240, 176,
     FRAMESIZE_240X240, 240, 240,
     FRAMESIZE_QVGA,    320, 240,
+    FRAMESIZE_320X320, 320, 320,
     FRAMESIZE_CIF,     400, 296,
     FRAMESIZE_HVGA,    480, 320,
     FRAMESIZE_VGA,     640, 480,
@@ -137,6 +139,7 @@ static FramesizeRecord FrameSizes[MAX_FRAMESIZES] = {
     FRAMESIZE_QHD,     2560, 1440,
     FRAMESIZE_WQXGA,   2560, 1600,
     FRAMESIZE_QSXGA,   2560, 1920,
+    FRAMESIZE_5MP,     2592, 1944,
 };
 
 static camera_config_t camera_config = {
