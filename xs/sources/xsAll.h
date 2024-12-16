@@ -1070,6 +1070,7 @@ extern void fxIDToString(txMachine* the, txID id, txString theBuffer, txSize the
 
 /* xsError.c */
 mxExport void fx_Error(txMachine* the);
+mxExport void fx_Error_isError(txMachine* the);
 mxExport void fx_Error_toString(txMachine* the);
 mxExport void fx_AggregateError(txMachine* the);
 mxExport void fx_EvalError(txMachine* the);

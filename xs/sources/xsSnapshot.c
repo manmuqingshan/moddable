@@ -110,7 +110,12 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 #else
 	#define mxImmutableArrayBuffersAdditions 0
 #endif
-#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions + mxImmutableArrayBuffersAdditions)
+#if mxErrorIsError
+	#define mxErrorIsErrorAdditions 1
+#else
+	#define mxErrorIsErrorAdditions 0
+#endif
+#define mxCallbacksLength (496 + mxECMAScript2023Additions + mxExplicitResourceManagementAdditions + mxECMAScript2024Additions + mxUint8ArrayBase64Additions + mxModuleStuffAdditions + mxECMAScript2025Additions + mxFloat16Additions + mxImmutableArrayBuffersAdditions  + mxErrorIsErrorAdditions )
 
 static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AggregateError,
@@ -682,6 +687,9 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #if mxImmutableArrayBuffers
 	fx_ArrayBuffer_prototype_get_immutable,
 	fx_ArrayBuffer_prototype_transferToImmutable,
+#endif
+#if mxErrorIsError
+	fx_Error_isError,
 #endif
 };
 extern const txTypeDispatch gxTypeDispatches[];

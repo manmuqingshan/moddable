@@ -1862,4 +1862,7 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"immutable",
 	"transferToImmutable",
 #endif
+#if mxErrorIsError
+	"isError",
+#endif
 };

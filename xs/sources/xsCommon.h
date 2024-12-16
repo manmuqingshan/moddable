@@ -77,6 +77,9 @@
 #ifndef mxECMAScript2023
 	#define mxECMAScript2023 1
 #endif
+#ifndef mxErrorIsError
+	#define mxErrorIsError 0
+#endif
 #ifndef mxExplicitResourceManagement
 	#define mxExplicitResourceManagement 0
 #endif
@@ -1289,6 +1292,9 @@ enum {
 #if mxImmutableArrayBuffers
 	_immutable,
 	_transferToImmutable,
+#endif
+#if mxErrorIsError
+	_isError,
 #endif
 	XS_ID_COUNT
 };

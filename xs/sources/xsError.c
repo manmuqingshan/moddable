@@ -74,6 +74,10 @@ void fxBuildError(txMachine* the)
 	mxErrorPrototype = *the->stack;
 	prototype = fxBuildHostConstructor(the, mxCallback(fx_Error), 1, mxID(_Error));
 	mxErrorConstructor = *the->stack;
+#if mxErrorIsError
+	slot = fxLastProperty(the, prototype);
+	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Error_isError), 1, mxID(_isError), XS_DONT_ENUM_FLAG);
+#endif
 	mxPop();
 	mxPush(mxErrorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -235,6 +239,21 @@ void fxCaptureErrorStack(txMachine* the, txSlot* internal, txSlot* frame)
 void fx_Error(txMachine* the)
 {
 	fx_Error_aux(the, XS_UNKNOWN_ERROR, 0);
+}
+
+void fx_Error_isError(txMachine* the)
+{
+	mxResult->kind = XS_BOOLEAN_KIND;
+	mxResult->value.boolean = 0;
+	if (mxArgc > 0) {
+		txSlot* instance = fxGetInstance(the, mxArgv(0));
+		if (instance) {
+			txSlot* internal = instance->next;
+			if (internal && (internal->kind == XS_ERROR_KIND)) {
+				mxResult->value.boolean = 1;
+			}
+		}
+	}
 }
 
 txSlot* fx_Error_aux(txMachine* the, txError error, txInteger i)
