@@ -381,7 +381,7 @@ export class Client {
 		let listeners = this.#eventListeners[event];
 		if (!listeners)
 			throw new Error("no such event");
-		let index = listeners.find(item => item === listener);
+		let index = listeners.findIndex(item => item === listener);
 		if (index >= 0)
 			listeners.splice(index, 1);
 	}
