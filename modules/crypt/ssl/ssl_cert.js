@@ -111,7 +111,7 @@ class CertificateManager {
 
 		return X509.decodeSPKI(data);
 	}
-	verify(certs) {
+	verify(certs, options) {
 		if (!this.#verify)
 			return true;
 
@@ -121,6 +121,41 @@ class CertificateManager {
 		// this approach calls decodeSPKI once more than necessary in favor of minimizing memory use
 		for (let i = 0; i < length; i++) {
 			x509 = X509.decode(certs[i]);
+			const names = X509.decodeSAN(certs[i]);
+			if (!names) return false;
+
+			let tls_server_name = options.tls_server_name, match;
+			if (tls_server_name) {
+				tls_server_name = tls_server_name.toLowerCase();
+
+				for (let j = 0; j < names.length; j++) {
+					let name = names[j];
+					if (2 === name.tag) {			// dNSName
+						name = name.value.toLowerCase();
+						if (42 === name.charCodeAt(0)) {		// wildcard ("*")
+							if (name.indexOf("*", 1) > 0)	// only one wild card
+								continue;
+							let position = tls_server_name.indexOf(".");
+							if (position < 0) continue;
+							match = name.slice(1).toLowerCase() === tls_server_name.slice(position);
+						}
+						else
+							match = name.toLowerCase() === tls_server_name;
+					}
+					else if (7 === name.tag) {		// iPAddress
+						name = name.value;
+						if (4 !== name.byteLength) continue;		// only handling IPv4 for now
+						name = (new Uint8Array(name)).join(".");
+						match = name === tls_server_name;
+					}
+					if (match) break;
+				}
+			}
+			if (!match) {
+				trace(`subjectAltName match failed for ${tls_server_name}\n`);
+				return false;
+			}
+
 			validity = X509.decodeTBS(x509.tbs).validity;
 			if (!((validity.from < now) && (now < validity.to))) {
 				trace("date validation failed on received certificate\n");

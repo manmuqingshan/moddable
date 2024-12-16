@@ -52,7 +52,7 @@ class SSLStream {
 			this.#write = buffer.length;
 		}
 		else {
-			this.#bytes = new Uint8Array(new ArrayBuffer(initial ?? 32, {maxByteLength: 0x10000000}));
+			this.#bytes = new Uint8Array(new ArrayBuffer(initial ?? 32, {maxByteLength: 16896}));		// TLS chunks can't be bigger than 16 KB, so this should be enough (and XS doesn't really use this value)
 			this.#bytes.i = true;
 		}
 	}
@@ -83,11 +83,13 @@ class SSLStream {
 		this.writeChunk(ArrayBuffer.fromString(s));
 	}
 	readChar() {
-		return this.#read < this.#write ? this.#bytes[this.#read++] : undefined;
+		if (this.#read >= this.#write)
+			throw new Error;
+		return this.#bytes[this.#read++];
 	}
 	readChars(n) {
 		if (this.#read + n > this.#write)
-			return;
+			throw new Error;
 		let v = 0;
 		while (--n >= 0)
 			v = (v << 8) | this.#bytes[this.#read++];
@@ -96,7 +98,7 @@ class SSLStream {
 	readChunk(n, reference) {
 		const read = this.#read;
 		if (read + n > this.#write)
-			return;
+			throw new Error;
 
 		this.#read += n;
 		if (reference)
