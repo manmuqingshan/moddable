@@ -937,12 +937,6 @@ extern txBoolean fxGlobalDeleteProperty(txMachine* the, txSlot* instance, txID i
 extern txSlot* fxGlobalGetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
 extern txSlot* fxGlobalSetProperty(txMachine* the, txSlot* instance, txID id, txIndex index, txFlag flag);
 
-#if mxExplicitResourceManagement
-mxExport void fx_Iterator_dispose(txMachine* the);
-#endif
-mxExport void fx_Iterator_iterator(txMachine* the);
-mxExport void fx_Enumerator(txMachine* the);
-mxExport void fx_Enumerator_next(txMachine* the);
 mxExport void fx_decodeURI(txMachine* the);
 mxExport void fx_decodeURIComponent(txMachine* the);
 mxExport void fx_encodeURI(txMachine* the);
@@ -955,12 +949,6 @@ mxExport void fx_trace_left(txMachine* the);
 mxExport void fx_trace_right(txMachine* the);
 mxExport void fx_unescape(txMachine* the);
 
-extern txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id);
-extern txSlot* fxCheckIteratorResult(txMachine* the, txSlot* result);
-extern txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSlot* next, txBoolean optional);
-extern txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot* value);
-extern void fxIteratorReturn(txMachine* the, txSlot* iterator, txBoolean abrupt);
-extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id);
 mxExport void fxDecodeURI(txMachine* the, txString theSet);
 mxExport void fxEncodeURI(txMachine* the, txString theSet);
 
@@ -1830,11 +1818,48 @@ mxExport void fx_JSON_stringify(txMachine* the);
 extern void fxBuildJSON(txMachine* the);
 
 /* xsGenerator.c */
+
+extern txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id);
+extern txSlot* fxCheckIteratorResult(txMachine* the, txSlot* result);
+extern txBoolean fxGetIterator(txMachine* the, txSlot* iterable, txSlot* iterator, txSlot* next, txBoolean optional);
+extern txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot* value);
+extern void fxIteratorReturn(txMachine* the, txSlot* iterator, txBoolean abrupt);
+extern txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id);
+
+mxExport void fx_Iterator(txMachine* the);
+mxExport void fx_Iterator_from(txMachine* the);
+mxExport void fx_Iterator_prototype_constructor_get(txMachine* the);
+mxExport void fx_Iterator_prototype_constructor_set(txMachine* the);
+mxExport void fx_Iterator_prototype_dispose(txMachine* the);
+mxExport void fx_Iterator_prototype_drop(txMachine* the);
+mxExport void fx_Iterator_prototype_every(txMachine* the);
+mxExport void fx_Iterator_prototype_filter(txMachine* the);
+mxExport void fx_Iterator_prototype_find(txMachine* the);
+mxExport void fx_Iterator_prototype_flatMap(txMachine* the);
+mxExport void fx_Iterator_prototype_forEach(txMachine* the);
+mxExport void fx_Iterator_prototype_iterator(txMachine* the);
+mxExport void fx_Iterator_prototype_map(txMachine* the);
+mxExport void fx_Iterator_prototype_reduce(txMachine* the);
+mxExport void fx_Iterator_prototype_some(txMachine* the);
+mxExport void fx_Iterator_prototype_take(txMachine* the);
+mxExport void fx_Iterator_prototype_toArray(txMachine* the);
+mxExport void fx_Iterator_prototype_toStringTag_get(txMachine* the);
+mxExport void fx_Iterator_prototype_toStringTag_set(txMachine* the);
+
+mxExport void fx_IteratorHelper_prototype_next(txMachine* the);
+mxExport void fx_IteratorHelper_prototype_return(txMachine* the);
+
 mxExport void fx_Generator(txMachine* the);
 mxExport void fx_Generator_prototype_next(txMachine* the);
 mxExport void fx_Generator_prototype_return(txMachine* the);
 mxExport void fx_Generator_prototype_throw(txMachine* the);
 mxExport void fx_GeneratorFunction(txMachine* the);
+
+mxExport void fx_Enumerator(txMachine* the);
+mxExport void fx_Enumerator_prototype_next(txMachine* the);
+
+mxExport void fx_AsyncIterator_prototype_asyncDispose(txMachine* the);
+mxExport void fx_AsyncIterator_prototype_asyncIterator(txMachine* the);
 
 mxExport void fx_AsyncGenerator(txMachine* the);
 mxExport void fx_AsyncGenerator_prototype_next(txMachine* the);
@@ -1842,10 +1867,6 @@ mxExport void fx_AsyncGenerator_prototype_return(txMachine* the);
 mxExport void fx_AsyncGenerator_prototype_throw(txMachine* the);
 mxExport void fx_AsyncGeneratorFunction(txMachine* the);
 
-#if mxExplicitResourceManagement
-mxExport void fx_AsyncIterator_asyncDispose(txMachine* the);
-#endif
-mxExport void fx_AsyncIterator_asyncIterator(txMachine* the);
 mxExport void fx_AsyncFromSyncIterator_prototype_next(txMachine* the);
 mxExport void fx_AsyncFromSyncIterator_prototype_return(txMachine* the);
 mxExport void fx_AsyncFromSyncIterator_prototype_throw(txMachine* the);
@@ -1856,6 +1877,7 @@ extern txSlot* fxNewGeneratorFunctionInstance(txMachine* the, txID name);
 extern txSlot* fxNewAsyncGeneratorInstance(txMachine* the);
 extern txSlot* fxNewAsyncGeneratorFunctionInstance(txMachine* the, txID name);
 extern txSlot* fxNewAsyncFromSyncIteratorInstance(txMachine* the);
+
 extern void fxAsyncGeneratorRejectAwait(txMachine* the);
 extern void fxAsyncGeneratorRejectYield(txMachine* the);
 extern void fxAsyncGeneratorResolveAwait(txMachine* the);
@@ -2688,6 +2710,9 @@ enum {
 	mxOrdinaryToPrimitiveFunctionStackIndex,
 	mxCompartmentGlobalStackIndex,
 	
+#if mxECMAScript2025	
+	mxIteratorHelperPrototypeStackIndex,
+#endif
 #if mxExplicitResourceManagement	
 	mxSuppressedErrorPrototypeStackIndex,
 	mxDisposableStackPrototypeStackIndex,
@@ -2741,9 +2766,6 @@ enum {
 #define mxErrorConstructor the->stackIntrinsics[-1 - _Error]
 #define mxEvalErrorConstructor the->stackIntrinsics[-1 - _EvalError]
 #define mxFinalizationRegistryConstructor the->stackIntrinsics[-1 - _FinalizationRegistry]
-#if mxFloat16
-#define mxFloat16ArrayConstructor the->stackIntrinsics[-1 - _Float16Array]
-#endif
 #define mxFloat32ArrayConstructor the->stackIntrinsics[-1 - _Float32Array]
 #define mxFloat64ArrayConstructor the->stackIntrinsics[-1 - _Float64Array]
 #define mxFunctionConstructor the->stackIntrinsics[-1 - _Function]
@@ -2792,11 +2814,17 @@ enum {
 #define mxTraceFunction the->stackIntrinsics[-1 - _trace]
 #define mxUndefined the->stackIntrinsics[-1 - _undefined]
 #define mxUnescapeFunction the->stackIntrinsics[-1 - _unescape]
+#if mxECMAScript2025	
+#define mxIteratorConstructor the->stackIntrinsics[-1 - _Iterator]
+#endif
 #if mxExplicitResourceManagement	
 #define mxAsyncDisposableStackConstructor the->stackIntrinsics[-1 - _AsyncDisposableStack]
 #define mxDisposableStackConstructor the->stackIntrinsics[-1 - _DisposableStack]
 #define mxSuppressedErrorConstructor the->stackIntrinsics[-1 - _SuppressedError]
 #endif	
+#if mxFloat16
+#define mxFloat16ArrayConstructor the->stackIntrinsics[-1 - _Float16Array]
+#endif
 #if mxModuleStuff	
 #define mxModuleStuffConstructor the->stackIntrinsics[-1 - _ModuleStuff]
 #endif	
@@ -2891,12 +2919,14 @@ enum {
 #define mxOrdinaryToPrimitiveFunction the->stackIntrinsics[-1 - mxOrdinaryToPrimitiveFunctionStackIndex]
 #define mxCompartmentGlobal the->stackIntrinsics[-1 - mxCompartmentGlobalStackIndex]
 
+#if mxECMAScript2025	
+#define mxIteratorHelperPrototype the->stackIntrinsics[-1 - mxIteratorHelperPrototypeStackIndex]
+#endif
 #if mxExplicitResourceManagement
 #define mxSuppressedErrorPrototype the->stackIntrinsics[-1 - mxSuppressedErrorPrototypeStackIndex]
 #define mxDisposableStackPrototype the->stackIntrinsics[-1 - mxDisposableStackPrototypeStackIndex]
 #define mxAsyncDisposableStackPrototype the->stackIntrinsics[-1 - mxAsyncDisposableStackPrototypeStackIndex]
 #endif
-
 #if mxModuleStuff	
 #define mxModuleStuffPrototype the->stackIntrinsics[-1 - mxModuleStuffPrototypeStackIndex]
 #endif

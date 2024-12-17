@@ -96,7 +96,7 @@ static void fxWriteStack(txMachine* the, txSnapshot* snapshot);
 	#define mxModuleStuffAdditions 0
 #endif
 #if mxECMAScript2025
-	#define mxECMAScript2025Additions 10
+	#define mxECMAScript2025Additions 28
 #else
 	#define mxECMAScript2025Additions 0
 #endif
@@ -177,7 +177,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AsyncGenerator_prototype_throw,
 	fx_AsyncGenerator,
 	fx_AsyncGeneratorFunction,
-	fx_AsyncIterator_asyncIterator,
+	fx_AsyncIterator_prototype_asyncIterator,
 	fx_Atomics_add,
 	fx_Atomics_and,
 	fx_Atomics_compareExchange,
@@ -281,7 +281,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_decodeURIComponent,
 	fx_encodeURI,
 	fx_encodeURIComponent,
-	fx_Enumerator_next,
+	fx_Enumerator_prototype_next,
 	fx_Enumerator,
 	fx_Error_prototype_get_stack,
 	fx_Error_toString,
@@ -307,7 +307,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_GeneratorFunction,
 	fx_isFinite,
 	fx_isNaN,
-	fx_Iterator_iterator,
+	fx_Iterator_prototype_iterator,
 	fx_JSON_parse,
 	fx_JSON_stringify,
 	fx_Map_prototype_clear,
@@ -635,7 +635,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_AsyncDisposableStack_prototype_disposeAsync,
 	fx_AsyncDisposableStack_prototype_move,
 	fx_AsyncDisposableStack_prototype_use,
-	fx_AsyncIterator_asyncDispose,
+	fx_AsyncIterator_prototype_asyncDispose,
 	fx_DisposableStack,
 	fx_DisposableStack_prototype_get_disposed,
 	fx_DisposableStack_prototype_adopt,
@@ -643,7 +643,7 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 	fx_DisposableStack_prototype_dispose,
 	fx_DisposableStack_prototype_move,
 	fx_DisposableStack_prototype_use,
-	fx_Iterator_dispose,
+	fx_Iterator_prototype_dispose,
 	fx_SuppressedError,
 #endif
 #if mxECMAScript2024
@@ -669,6 +669,24 @@ static txCallback gxCallbacks[mxCallbacksLength] = {
 #endif
 #if mxECMAScript2025
 	fx_Error_prototype_set_stack,
+	fx_Iterator,
+	fx_Iterator_prototype_constructor_get,
+	fx_Iterator_prototype_constructor_set,
+	fx_Iterator_prototype_drop,
+	fx_Iterator_prototype_every,
+	fx_Iterator_prototype_filter,
+	fx_Iterator_prototype_find,
+	fx_Iterator_prototype_flatMap,
+	fx_Iterator_prototype_forEach,
+	fx_Iterator_prototype_map,
+	fx_Iterator_prototype_reduce,
+	fx_Iterator_prototype_some,
+	fx_Iterator_prototype_take,
+	fx_Iterator_prototype_toArray,
+	fx_Iterator_prototype_toStringTag_get,
+	fx_Iterator_prototype_toStringTag_set,
+	fx_IteratorHelper_prototype_next,
+	fx_IteratorHelper_prototype_return,
 	fx_ModuleSource_prototype_get_options,
 	fx_Promise_try,
 	fx_Set_prototype_difference,

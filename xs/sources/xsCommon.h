@@ -780,9 +780,6 @@ enum {
 	_Error,
 	_EvalError,
 	_FinalizationRegistry,
-#if mxFloat16	
-	_Float16Array,
-#endif
 	_Float32Array,
 	_Float64Array,
 	_Int16Array,
@@ -826,11 +823,17 @@ enum {
 	_parseInt,
 	_trace,
 	_unescape,
+#if mxECMAScript2025	
+	_Iterator,
+#endif
 #if mxExplicitResourceManagement	
 	_AsyncDisposableStack,
 	_DisposableStack,
 	_SuppressedError,
 #endif	
+#if mxFloat16	
+	_Float16Array,
+#endif
 	_Infinity,
 	_NaN,
 	_undefined,
@@ -1274,12 +1277,15 @@ enum {
 #endif
 #if mxECMAScript2025
 	_difference,
+	_drop,
 	_intersection,
 	_isDisjointFrom,
 	_isSubsetOf,
 	_isSupersetOf,
 	_options,
 	_symmetricDifference,
+	_take,
+	_toArray,
 	_try_,
 	_type,
 	_union,

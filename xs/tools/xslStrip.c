@@ -99,7 +99,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 			fxUnstripCallback(linker, fx_Promise);
 			
 		if (fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION))
-			fxUnstripCallback(linker, fx_AsyncIterator_asyncIterator);
+			fxUnstripCallback(linker, fx_AsyncIterator_prototype_asyncIterator);
 			
 		if (fxIsCodeUsed(XS_CODE_BIGINT_1) || fxIsCodeUsed(XS_CODE_BIGINT_2))
 			fxUnstripCallback(linker, fx_BigInt);
@@ -212,7 +212,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 				fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_next);
 				fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_return);
 				fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_throw);
-				fxStripCallback(linker, fx_AsyncIterator_asyncIterator);
+				fxStripCallback(linker, fx_AsyncIterator_prototype_asyncIterator);
 				fxStripCallback(linker, fx_AsyncGenerator_prototype_next);
 				fxStripCallback(linker, fx_AsyncGenerator_prototype_return);
 				fxStripCallback(linker, fx_AsyncGenerator_prototype_throw);
@@ -304,12 +304,12 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 	fxUnstripCallback(linker, fx_Boolean_prototype_toString);
 	fxUnstripCallback(linker, fx_Boolean_prototype_valueOf);
 	fxUnstripCallback(linker, fx_Enumerator);
-	fxUnstripCallback(linker, fx_Enumerator_next);
+	fxUnstripCallback(linker, fx_Enumerator_prototype_next);
 	fxUnstripCallback(linker, fx_Error_toString);
 	fxUnstripCallback(linker, fx_Function_prototype_hasInstance);
 	fxUnstripCallback(linker, fx_Function_prototype_toString);
 	fxUnstripCallback(linker, fx_Generator);
-	fxUnstripCallback(linker, fx_Iterator_iterator);
+	fxUnstripCallback(linker, fx_Iterator_prototype_iterator);
 	fxUnstripCallback(linker, fx_Number_prototype_toString);
 	fxUnstripCallback(linker, fx_Number_prototype_valueOf);
 	fxUnstripCallback(linker, fx_Object_assign);
@@ -499,7 +499,7 @@ void fxStripCallbacks(txLinker* linker, txMachine* the)
 		fxStripCallback(linker, fx_AsyncFromSyncIterator_prototype_throw);
 	}
 	if (!fxIsCodeUsed(XS_CODE_ASYNC_GENERATOR_FUNCTION) && !fxIsCodeUsed(XS_CODE_FOR_AWAIT_OF)) {
-		fxStripCallback(linker, fx_AsyncIterator_asyncIterator);
+		fxStripCallback(linker, fx_AsyncIterator_prototype_asyncIterator);
 	}
 }
 

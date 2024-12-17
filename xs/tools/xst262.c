@@ -158,7 +158,6 @@ static char* gxFeatures[mxFeaturesCount] = {
 	"arbitrary-module-namespace-names",
 	"decorators",
 	"import-assertions",
-	"iterator-helpers",
 	"json-parse-with-source",
 	"source-phase-imports",
 	"source-phase-imports-module-source"

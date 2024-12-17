@@ -1357,6 +1357,9 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"Int16Array",
 	"Int32Array",
 	"Int8Array",
+#if mxECMAScript2025	
+	"Iterator",
+#endif
 	"JSON",
 	"Map",
 	"Math",
@@ -1843,12 +1846,15 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 #endif
 #if mxECMAScript2025
 	"difference",
+	"drop",
 	"intersection",
 	"isDisjointFrom",
 	"isSubsetOf",
 	"isSupersetOf",
 	"options",
 	"symmetricDifference",
+	"take",
+	"toArray",
 	"try",
 	"type",
 	"union",
