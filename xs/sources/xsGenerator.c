@@ -39,6 +39,12 @@
 
 //#define mxPromisePrint 1
 
+typedef txBoolean (*txIteratorStep)(txMachine* the, txSlot* iterator, txSlot* next, txSlot* extra, txSlot* value);
+
+static txBoolean fx_Iterator_prototype_drop_step(txMachine* the, txSlot* iterator, txSlot* next, txSlot* extra, txSlot* value);
+
+static txSlot* fxNewIteratorHelperInstance(txMachine* the, txSlot* iterator, txInteger step);
+
 static void fxNewGeneratorResult(txMachine* the, txBoolean done);
 
 static txSlot* fxCheckGeneratorInstance(txMachine* the, txSlot* slot);
@@ -59,7 +65,6 @@ void fxBuildGenerator(txMachine* the)
 	mxPush(mxIteratorPrototype);
 	slot = fxLastProperty(the, the->stack->value.reference);
 #if mxECMAScript2025
-	slot = fxNextHostAccessorProperty(the, slot, mxCallback(fx_Iterator_prototype_constructor_get), mxCallback(fx_Iterator_prototype_constructor_set), mxID(_constructor), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Iterator_prototype_drop), 1, mxID(_drop), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Iterator_prototype_every), 1, mxID(_every), XS_DONT_ENUM_FLAG);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Iterator_prototype_filter), 1, mxID(_filter), XS_DONT_ENUM_FLAG);
@@ -78,9 +83,15 @@ void fxBuildGenerator(txMachine* the)
 #endif
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Iterator_prototype_iterator), 0, mxID(_Symbol_iterator), XS_DONT_ENUM_FLAG);
 #if mxECMAScript2025
-	slot = fxBuildHostConstructor(the, mxCallback(fx_Iterator), 1, mxID(_Iterator));
+	property = slot;
+	slot = fxBuildHostConstructor(the, mxCallback(fx_Iterator), 0, mxID(_Iterator));
 	mxIteratorConstructor = *the->stack;
+	slot = fxLastProperty(the, slot);
 	slot = fxNextHostFunctionProperty(the, slot, mxCallback(fx_Iterator_from), 1, mxID(_from), XS_DONT_ENUM_FLAG);
+	
+	mxPush(mxIteratorPrototype);
+	property = fxNextHostAccessorProperty(the, property, mxCallback(fx_Iterator_prototype_constructor_get), mxCallback(fx_Iterator_prototype_constructor_set), mxID(_constructor), XS_DONT_ENUM_FLAG);
+	mxPop();
 	
 	mxPush(mxIteratorPrototype);
 	slot = fxLastProperty(the, fxNewObjectInstance(the));
@@ -159,6 +170,15 @@ void fxBuildGenerator(txMachine* the)
 	mxAsyncFromSyncIteratorPrototype = *the->stack;
 	mxPop();
 }
+
+enum {
+	mx_Iterator_prototype_drop = 0,
+	mxIteratorStepCount
+};
+
+const txIteratorStep ICACHE_FLASH_ATTR gxIteratorSteps[mxIteratorStepCount]  = {
+	fx_Iterator_prototype_drop_step
+};
 
 txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id)
 {
@@ -271,6 +291,30 @@ txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id)
 	return instance;
 }
 
+void fxSetterThatIgnoresPrototypeProperties(txMachine* the, txSlot* reference, txID id, txString name, txSlot* value)
+{
+	txSlot* instance = fxGetInstance(the, reference);
+	txSlot* home = mxFunctionInstanceHome(mxFunction->value.reference);
+	txSlot* property;
+	if (!instance)
+		mxTypeError("set %s: not an object", name);
+	if (home->value.home.object == instance)
+		mxTypeError("set %s: not writable", name);
+	mxTemporary(property);
+	if (mxBehaviorGetOwnProperty(the, instance, id, 0, property)) {
+		if (!mxBehaviorDefineOwnProperty(the, instance, id, 0, value, XS_NO_FLAG))
+			mxTypeError("set %s: not extensible", name);
+	}
+	else {
+		property = mxBehaviorSetProperty(the, instance, id, 0, XS_OWN);
+		if (!property)
+			mxTypeError("set %s: not writable", name);
+		property->kind = value->kind;
+		property->value = value->value;
+	}
+	mxPop();
+}
+
 void fx_Iterator(txMachine* the)
 {
 	if (mxIsUndefined(mxTarget))
@@ -289,13 +333,13 @@ void fx_Iterator_from(txMachine* the)
 
 void fx_Iterator_prototype_constructor_get(txMachine* the)
 {
-	mxPush(mxIteratorPrototype);
+	mxPush(mxIteratorConstructor);
 	mxPullSlot(mxResult);
 }
 
 void fx_Iterator_prototype_constructor_set(txMachine* the)
 {
-	
+	fxSetterThatIgnoresPrototypeProperties(the, mxThis, mxID(_constructor), "constructor", mxArgv(0));
 }
 
 void fx_Iterator_prototype_dispose(txMachine* the)
@@ -304,11 +348,92 @@ void fx_Iterator_prototype_dispose(txMachine* the)
 }
 
 void fx_Iterator_prototype_drop(txMachine* the)
-{	
+{
+	txSlot *iterator, *property;
+	txNumber limit;
+	if (!fxGetInstance(the, mxThis))
+		mxTypeError("this: not an object");
+	iterator = mxThis;
+	if (mxArgc > 0)
+		mxPushSlot(mxArgv(0));
+	else
+		mxPushUndefined();
+	limit = fxToNumber(the, the->stack);
+	if (c_isnan(limit))
+		mxRangeError("limit: NaN");
+	if (c_isfinite(limit))
+		limit = c_trunc(limit);
+	if (limit < 0)
+		mxRangeError("limit: < 0");
+	property = fxLastProperty(the, fxNewIteratorHelperInstance(the, iterator, mx_Iterator_prototype_drop));
+	property = fxNextNumberProperty(the, property, limit, XS_NO_ID, XS_INTERNAL_FLAG);
+	mxPullSlot(mxResult);
+	mxPop();
+}
+
+txBoolean fx_Iterator_prototype_drop_step(txMachine* the, txSlot* iterator, txSlot* next, txSlot* extra, txSlot* value)
+{
+	txNumber remaining = extra->value.number;
+	while (remaining > 0) {
+		if (fxIteratorNext(the, iterator, next, value)) {
+			if (c_isfinite(remaining)) {
+				remaining--;
+				extra->value.number = remaining;
+			}
+		}
+		else
+			return 0;
+	}
+	if (fxIteratorNext(the, iterator, next, value))
+		return 1;
+	return 0;
 }
 
 void fx_Iterator_prototype_every(txMachine* the)
 {	
+	txSlot *iterator, *predicate, *next, *value;
+	txInteger counter;
+	if (!fxGetInstance(the, mxThis))
+		mxTypeError("this: not an object");
+	iterator = mxThis;
+	if (mxArgc > 0)
+		mxPushSlot(mxArgv(0));
+	else
+		mxPushUndefined();
+	predicate = the->stack;
+	if (!fxIsCallable(the, predicate))
+		mxTypeError("predicate: not a function");
+	mxPushSlot(iterator);
+	mxGetID(mxID(_next));
+	next = the->stack;
+	mxTemporary(value);
+	counter = 0;
+	mxResult->kind = XS_BOOLEAN_KIND;
+	mxResult->value.boolean = 1;
+	while (fxIteratorNext(the, iterator, next, value)) {
+		mxTry(the) {
+			mxPushUndefined();
+			mxPushSlot(predicate);
+			mxCall();
+			mxPushSlot(value);
+			mxPushInteger(counter);
+			mxRunCount(2);
+			mxResult->value.boolean = fxToBoolean(the, the->stack);
+			mxPop();
+			if (!mxResult->value.boolean) {
+				fxIteratorReturn(the, iterator, 0);
+				break;
+			}
+			counter++;
+		}
+		mxCatch(the) {
+			fxIteratorReturn(the, iterator, 1);
+			fxJump(the);
+		}
+	}
+	mxPop();
+	mxPop();
+	mxPop();
 }
 
 void fx_Iterator_prototype_filter(txMachine* the)
@@ -317,6 +442,50 @@ void fx_Iterator_prototype_filter(txMachine* the)
 
 void fx_Iterator_prototype_find(txMachine* the)
 {	
+	txSlot *iterator, *predicate, *next, *value;
+	txInteger counter;
+	txBoolean result;
+	if (!fxGetInstance(the, mxThis))
+		mxTypeError("this: not an object");
+	iterator = mxThis;
+	if (mxArgc > 0)
+		mxPushSlot(mxArgv(0));
+	else
+		mxPushUndefined();
+	predicate = the->stack;
+	if (!fxIsCallable(the, predicate))
+		mxTypeError("predicate: not a function");
+	mxPushSlot(iterator);
+	mxGetID(mxID(_next));
+	next = the->stack;
+	mxTemporary(value);
+	counter = 0;
+	while (fxIteratorNext(the, iterator, next, value)) {
+		mxTry(the) {
+			mxPushUndefined();
+			mxPushSlot(predicate);
+			mxCall();
+			mxPushSlot(value);
+			mxPushInteger(counter);
+			mxRunCount(2);
+			result = fxToBoolean(the, the->stack);
+			mxPop();
+			if (result) {
+				mxResult->kind = value->kind;
+				mxResult->value = value->value;
+				fxIteratorReturn(the, iterator, 0);
+				break;
+			}
+			counter++;
+		}
+		mxCatch(the) {
+			fxIteratorReturn(the, iterator, 1);
+			fxJump(the);
+		}
+	}
+	mxPop();
+	mxPop();
+	mxPop();
 }
 
 void fx_Iterator_prototype_flatMap(txMachine* the)
@@ -325,6 +494,42 @@ void fx_Iterator_prototype_flatMap(txMachine* the)
 
 void fx_Iterator_prototype_forEach(txMachine* the)
 {	
+	txSlot *iterator, *predicate, *next, *value;
+	txInteger counter;
+	if (!fxGetInstance(the, mxThis))
+		mxTypeError("this: not an object");
+	iterator = mxThis;
+	if (mxArgc > 0)
+		mxPushSlot(mxArgv(0));
+	else
+		mxPushUndefined();
+	predicate = the->stack;
+	if (!fxIsCallable(the, predicate))
+		mxTypeError("predicate: not a function");
+	mxPushSlot(iterator);
+	mxGetID(mxID(_next));
+	next = the->stack;
+	mxTemporary(value);
+	counter = 0;
+	while (fxIteratorNext(the, iterator, next, value)) {
+		mxTry(the) {
+			mxPushUndefined();
+			mxPushSlot(predicate);
+			mxCall();
+			mxPushSlot(value);
+			mxPushInteger(counter);
+			mxRunCount(2);
+			mxPop();
+			counter++;
+		}
+		mxCatch(the) {
+			fxIteratorReturn(the, iterator, 1);
+			fxJump(the);
+		}
+	}
+	mxPop();
+	mxPop();
+	mxPop();
 }
 
 void fx_Iterator_prototype_iterator(txMachine* the)
@@ -338,10 +543,100 @@ void fx_Iterator_prototype_map(txMachine* the)
 
 void fx_Iterator_prototype_reduce(txMachine* the)
 {	
+	txSlot *iterator, *predicate, *next, *value;
+	txInteger counter;
+	if (!fxGetInstance(the, mxThis))
+		mxTypeError("this: not an object");
+	iterator = mxThis;
+	if (mxArgc > 0)
+		mxPushSlot(mxArgv(0));
+	else
+		mxPushUndefined();
+	predicate = the->stack;
+	if (!fxIsCallable(the, predicate))
+		mxTypeError("predicate: not a function");
+	mxPushSlot(iterator);
+	mxGetID(mxID(_next));
+	next = the->stack;
+	mxTemporary(value);
+	if (mxArgc > 1) {
+		mxPushSlot(mxArgv(1));
+		counter = 0;
+	}
+	else {
+		mxPushUndefined();
+		if (!fxIteratorNext(the, iterator, next, the->stack))
+			mxTypeError("no initial value");
+		counter = 1;
+	}
+	mxPullSlot(mxResult);
+	while (fxIteratorNext(the, iterator, next, value)) {
+		mxTry(the) {
+			mxPushUndefined();
+			mxPushSlot(predicate);
+			mxCall();
+			mxPushSlot(mxResult);
+			mxPushSlot(value);
+			mxPushInteger(counter);
+			mxRunCount(3);
+			mxPullSlot(mxResult);
+			counter++;
+		}
+		mxCatch(the) {
+			fxIteratorReturn(the, iterator, 1);
+			fxJump(the);
+		}
+	}
+	mxPop();
+	mxPop();
+	mxPop();
 }
 
 void fx_Iterator_prototype_some(txMachine* the)
 {	
+	txSlot *iterator, *predicate, *next, *value;
+	txInteger counter;
+	if (!fxGetInstance(the, mxThis))
+		mxTypeError("this: not an object");
+	iterator = mxThis;
+	if (mxArgc > 0)
+		mxPushSlot(mxArgv(0));
+	else
+		mxPushUndefined();
+	predicate = the->stack;
+	if (!fxIsCallable(the, predicate))
+		mxTypeError("predicate: not a function");
+	mxPushSlot(iterator);
+	mxGetID(mxID(_next));
+	next = the->stack;
+	mxTemporary(value);
+	counter = 0;
+	mxResult->kind = XS_BOOLEAN_KIND;
+	mxResult->value.boolean = 0;
+	while (fxIteratorNext(the, iterator, next, value)) {
+		mxTry(the) {
+			mxPushUndefined();
+			mxPushSlot(predicate);
+			mxCall();
+			mxPushSlot(value);
+			mxPushInteger(counter);
+			mxRunCount(2);
+			mxResult->value.boolean = fxToBoolean(the, the->stack);
+			mxPop();
+			if (mxResult->value.boolean) {
+				fxIteratorReturn(the, iterator, 0);
+				break;
+			}
+			counter++;
+		}
+		mxCatch(the) {
+			fxIteratorReturn(the, iterator, 1);
+			fxJump(the);
+		}
+	}
+	mxPop();
+	mxPop();
+	mxPop();
 }
 
 void fx_Iterator_prototype_take(txMachine* the)
@@ -350,22 +645,95 @@ void fx_Iterator_prototype_take(txMachine* the)
 
 void fx_Iterator_prototype_toArray(txMachine* the)
 {	
+	txSlot *iterator, *next, *value, *instance, *internal, *item;
+	if (!fxGetInstance(the, mxThis))
+		mxTypeError("this: not an object");
+	iterator = mxThis;
+	mxPushSlot(iterator);
+	mxGetID(mxID(_next));
+	next = the->stack;
+	mxTemporary(value);
+	mxPush(mxArrayPrototype);
+	instance = fxNewArrayInstance(the);
+	mxPullSlot(mxResult);
+	internal = instance->next;
+	item = internal;
+	while (fxIteratorNext(the, iterator, next, value)) {
+		internal->value.array.length++;
+		item->next = fxNewSlot(the);
+		item = item->next;
+		item->kind = value->kind;
+		item->value = value->value;
+	}
+	fxCacheArray(the, instance);
+	mxPop();
+	mxPop();
 }
 
 void fx_Iterator_prototype_toStringTag_get(txMachine* the)
 {	
+	mxPushStringC("Iterator");
+	mxPullSlot(mxResult);
 }
 
 void fx_Iterator_prototype_toStringTag_set(txMachine* the)
 {	
+	fxSetterThatIgnoresPrototypeProperties(the, mxThis, mxID(_Symbol_toStringTag), "Symbol(toStringTag)", mxArgv(0));
+}
+
+txSlot* fxNewIteratorHelperInstance(txMachine* the, txSlot* iterator, txInteger step) 
+{
+	txSlot* instance;
+	txSlot* property;
+	mxPush(mxIteratorHelperPrototype);
+	instance = fxNewIteratorInstance(the, iterator, mxID(_Iterator));
+	property = fxLastProperty(the, instance);
+	property->value.integer = step;
+	mxPushSlot(iterator);
+	mxGetID(mxID(_next));
+	property = fxNextSlotProperty(the, property, the->stack, XS_NO_ID, XS_INTERNAL_FLAG);
+	mxPop();
+	return instance;
 }
 
 void fx_IteratorHelper_prototype_next(txMachine* the)
-{	
+{
+	txSlot* instance = fxCheckIteratorInstance(the, mxThis, mxID(_Iterator));
+	txSlot* result = instance->next;
+	txSlot* iterator = result->next;
+	txSlot* step = iterator->next;
+	txSlot* next = step->next;
+	txSlot* extra = next->next;
+	txSlot* value = fxCheckIteratorResult(the, result);
+	txSlot* done = value->next;
+	if (step->flag & XS_DONT_SET_FLAG)
+		mxTypeError("recursive iterator");
+	step->flag |= XS_DONT_SET_FLAG;
+	if (!done->value.boolean) {
+		if (!(*gxIteratorSteps[step->value.integer])(the, iterator, next, extra, value)) {
+			value->kind = XS_UNDEFINED_KIND;
+			done->value.boolean = 1;
+		}
+	}
+	mxResult->kind = result->kind;
+	mxResult->value = result->value;
+	step->flag &= ~XS_DONT_SET_FLAG;
 }
 
 void fx_IteratorHelper_prototype_return(txMachine* the)
-{	
+{
+	txSlot* instance = fxCheckIteratorInstance(the, mxThis, mxID(_Iterator));
+	txSlot* result = instance->next;
+	txSlot* iterator = result->next;
+	txSlot* value = fxCheckIteratorResult(the, result);
+	txSlot* done = value->next;
+	if (!done->value.boolean) {
+		fxIteratorReturn(the, iterator, 0);
+		value->kind = XS_UNDEFINED_KIND;
+		done->value.boolean = 1;
+	}
+	mxResult->kind = result->kind;
+	mxResult->value = result->value;
 }
 
 txSlot* fxCheckGeneratorInstance(txMachine* the, txSlot* slot)

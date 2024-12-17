@@ -1349,17 +1349,11 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"Error",
 	"EvalError",
 	"FinalizationRegistry",
-#if mxFloat16
-	"Float16Array",
-#endif
 	"Float32Array",
 	"Float64Array",
 	"Int16Array",
 	"Int32Array",
 	"Int8Array",
-#if mxECMAScript2025	
-	"Iterator",
-#endif
 	"JSON",
 	"Map",
 	"Math",
@@ -1398,11 +1392,17 @@ const txString gxIDStrings[XS_ID_COUNT] = {
 	"parseInt",
 	"trace",
 	"unescape",
+#if mxECMAScript2025	
+	"Iterator",
+#endif
 #if mxExplicitResourceManagement	
 	"AsyncDisposableStack",
 	"DisposableStack",
 	"SuppressedError",
 #endif	
+#if mxFloat16
+	"Float16Array",
+#endif
 	"Infinity",
 	"NaN",
 	"undefined",
