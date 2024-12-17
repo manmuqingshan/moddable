@@ -271,22 +271,6 @@ txSlot* fxNewIteratorInstance(txMachine* the, txSlot* iterable, txID id)
 	return instance;
 }
 
-void fxSetterThatIgnoresPrototypeProperties(txMachine* the, txSlot* reference, txSlot* home, txID id, txSlot* value)
-{
-	if (!mxIsReference(reference))
-		mxTypeError("this: not an object", name);
-	txSlot* instance = fxGetInstance(the, reference);
-	txSlot* home = mxFunctionInstanceHome(mxFunction->value.reference)->value.home;
-	if (home->value.home.object == instance)
-		mxTypeError("set %s: not writable", name);
-	if (mxBehaviorGetOwnProperty(the, instance, id, 0, property)) {
-		if (!mxBehaviorDefineOwnProperty(the, instance, id, 0, value, mask))
-	}
-	else {
-		property = mxBehaviorSetProperty(the, instance, id, 0, XS_OWN);
-	}
-}
-
 void fx_Iterator(txMachine* the)
 {
 	if (mxIsUndefined(mxTarget))
