@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023  Moddable Tech, Inc.
+ * Copyright (c) 2021-2024  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -20,6 +20,8 @@
  
 import Timer from "timer";
 
+const more = Object.freeze({more: true});
+
 class HTTPClient {
 	static #Request = class {
 		#client;
@@ -39,13 +41,14 @@ class HTTPClient {
 			if ("object" === typeof count) {
 				buffer = count;
 				count = buffer.byteLength;
+
+				if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
+					throw new Error("invalid buffer");
 			}			
 			const available = Math.min(client.#readable, (undefined === client.#chunk) ? client.#remaining : client.#chunk);
 			if (count > available) {
 				count = available;
 				if (buffer) {
-					if (buffer.BYTES_PER_ELEMENT > 1)		// allows ArrayBuffer, SharedArrayBuffer, Uint8Array, Int8Array, DataView. disallows multi-byte element arrays.
-						throw new Error("invalid buffer");
 					if (ArrayBuffer.isView(buffer))
 						buffer = new Uint8Array(buffer.buffer, buffer.byteOffset, count);
 					else
@@ -100,8 +103,8 @@ class HTTPClient {
 				if ((byteLength + 8) > client.#writable)
 					throw new Error("too much");
 
-				client.#write(ArrayBuffer.fromString(byteLength.toString(16) + "\r\n"));
-				client.#write(data);
+				client.#write(ArrayBuffer.fromString(byteLength.toString(16) + "\r\n"), more);
+				client.#write(data, more);
 				client.#write(ArrayBuffer.fromString("\r\n"));
 
 				return (client.#writable > 8) ? (client.#writable - 8) : 0 
@@ -420,12 +423,8 @@ class HTTPClient {
 		this.#chunk = undefined;
 		this.#requestBody = false;
 	}
-	#write(data) {
-		const result = this.#socket.write(data);
-		if (undefined !== result)
-			this.#writable = result;
-		else
-			this.#writable -= data.byteLength;
+	#write(data, options) {
+		this.#writable = this.#socket.write(data, options);
 	}
 }
 

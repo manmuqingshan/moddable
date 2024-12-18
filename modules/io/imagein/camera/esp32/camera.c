@@ -28,6 +28,7 @@
 #include "sensor.h"
 
 #include "commodettoBitmapFormat.h"
+#include "commodettoPocoBlit.h"
 
 #ifndef MODDEF_CAMERA_POWERDOWN
 	#define MODDEF_CAMERA_POWERDOWN -1
@@ -112,9 +113,8 @@ struct FramesizeRecord {
 typedef struct FramesizeRecord FramesizeRecord;
 typedef struct FramesizeRecord *Framesize;
 
-#define MAX_FRAMESIZES (22)
 // ordered by width, then by height
-static FramesizeRecord FrameSizes[MAX_FRAMESIZES] = {
+static FramesizeRecord FrameSizes[] = {
     FRAMESIZE_96X96,   96, 96,
     FRAMESIZE_QQVGA,   160, 120,
     FRAMESIZE_QCIF,    176, 144,
@@ -137,6 +137,7 @@ static FramesizeRecord FrameSizes[MAX_FRAMESIZES] = {
     FRAMESIZE_QHD,     2560, 1440,
     FRAMESIZE_WQXGA,   2560, 1600,
     FRAMESIZE_QSXGA,   2560, 1920,
+    FRAMESIZE_INVALID, 0, 0
 };
 
 static camera_config_t camera_config = {
@@ -248,6 +249,19 @@ static void cameraLoop(void *pvParameter)
 					pixels[i] = ((t & mask) << 8) | ((t >> 8) & mask);
 				}
 			}
+			else if (kCommodettoBitmapGray16 == camera->imageType) {	// convert RGB565BE to Gray16
+				uint32_t *src = (uint32_t*)fb->buf;
+				uint8_t *dst = (uint8_t*)fb->buf;
+				uint32_t i, count = fb->len >> 2;
+				const uint32_t mask = 0x00ff00ff;
+				for (i = 0; i < count; i++) {
+					uint32_t t = *src++;
+					t = ((t & mask) << 8) | ((t >> 8) & mask);
+					uint8_t a = PocoMakePixelGray16((((t >> 27) & 0x1f) << 3), (((t >> 21) & 0x3f) << 2), (((t >> 16) & 0x1f) >> 3));
+					uint8_t b = PocoMakePixelGray16((((t >> 11) & 0x1f) << 3), (((t >> 5) & 0x3f) << 2), (((t >> 0) & 0x1f) >> 3));
+					*dst++ = (b << 4) | a; 
+				}
+			}
 
 			frame->fb = fb;
 			frame->data = fb->buf;
@@ -290,7 +304,7 @@ static int formatToCamFormat(int commodettoFormat)
 		case kCommodettoBitmap24RGB: return PIXFORMAT_RGB888;			// 3BPP/RGB888
 		case kCommodettoBitmapRGB444: return PIXFORMAT_RGB444;			// 3BP2P/RGB444
 		case kCommodettoBitmapYUV422: return PIXFORMAT_YUV422;			// 2BPP/YUV422
-
+		case kCommodettoBitmapGray16: return PIXFORMAT_RGB565;			// 4BPP/GRAYSCAPE (post process) (in a perfec world, we would select YUV422 when available)
 		// PIXFORMAT_YUV420;    // 1.5BPP/YUV420
 		// PIXFORMAT_RAW;       // RAW	(?)
 		// PIXFORMAT_RGB555;    // 3BP2P/RGB555
@@ -301,11 +315,11 @@ static int formatToCamFormat(int commodettoFormat)
 static int sizeToFrameSize(int width, int height)
 {
 	int i;
-	for (i=0; i<MAX_FRAMESIZES; i++) {
+	for (i = 0; FRAMESIZE_INVALID != FrameSizes[i].id; i++) {
 		if (FrameSizes[i].width < width)
 			continue;
 		if (FrameSizes[i].height < height) {
-			if (i<MAX_FRAMESIZES-1 && (FrameSizes[i+1].width == FrameSizes[i].width))
+			if ((FRAMESIZE_INVALID != FrameSizes[i + 1].id) && (FrameSizes[i+1].width == FrameSizes[i].width))
 				return FrameSizes[i+1].id;
 		}
 		return FrameSizes[i].id;
