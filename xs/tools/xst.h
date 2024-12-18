@@ -105,7 +105,6 @@
 #define mxLockdown 1
 #define mxSnapshot 1
 
-#define mxErrorIsError 1
 #define mxExplicitResourceManagement 1
 #define mxImmutableArrayBuffers 1
 #define mxModuleStuff 1

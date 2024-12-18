@@ -78,7 +78,7 @@
 	#define mxECMAScript2023 1
 #endif
 #ifndef mxErrorIsError
-	#define mxErrorIsError 0
+	#define mxErrorIsError 1
 #endif
 #ifndef mxExplicitResourceManagement
 	#define mxExplicitResourceManagement 0

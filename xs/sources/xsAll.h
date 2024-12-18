@@ -1849,6 +1849,9 @@ mxExport void fx_Iterator_prototype_toStringTag_set(txMachine* the);
 mxExport void fx_IteratorHelper_prototype_next(txMachine* the);
 mxExport void fx_IteratorHelper_prototype_return(txMachine* the);
 
+mxExport void fx_IteratorWrapper_prototype_next(txMachine* the);
+mxExport void fx_IteratorWrapper_prototype_return(txMachine* the);
+
 mxExport void fx_Generator(txMachine* the);
 mxExport void fx_Generator_prototype_next(txMachine* the);
 mxExport void fx_Generator_prototype_return(txMachine* the);
@@ -2712,6 +2715,7 @@ enum {
 	
 #if mxECMAScript2025	
 	mxIteratorHelperPrototypeStackIndex,
+	mxIteratorWrapperPrototypeStackIndex,
 #endif
 #if mxExplicitResourceManagement	
 	mxSuppressedErrorPrototypeStackIndex,
@@ -2921,6 +2925,7 @@ enum {
 
 #if mxECMAScript2025	
 #define mxIteratorHelperPrototype the->stackIntrinsics[-1 - mxIteratorHelperPrototypeStackIndex]
+#define mxIteratorWrapperPrototype the->stackIntrinsics[-1 - mxIteratorWrapperPrototypeStackIndex]
 #endif
 #if mxExplicitResourceManagement
 #define mxSuppressedErrorPrototype the->stackIntrinsics[-1 - mxSuppressedErrorPrototypeStackIndex]
