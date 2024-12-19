@@ -1,6 +1,6 @@
 # Getting Started with Raspberry Pi Pico
 Copyright 2021-2024 Moddable Tech, Inc.<BR>
-Revised: September 29, 2024
+Revised: December 18, 2024
 
 This document describes how to start building Moddable applications for the Raspberry Pi Pico. It provides information on how to configure host build environments, how to build and deploy apps, and includes links to external development resources.
 
@@ -133,11 +133,18 @@ The Raspberry Pi Pico 2 has the following features:
 
 3. Install required components using `brew`.
 
+
 	```text
 	brew install cmake
-	brew tap ArmMbed/homebrew-formulae
-	brew install arm-none-eabi-gcc
+	brew install --cask gcc-arm-embedded
 	```
+
+	> Note: If you have previously installed `arm-none-eabi-gcc`, you may have to do this first
+	>
+	>	```text
+	>	brew uninstall arm-none-eabi-gcc
+	>	brew autoremove
+	>	```
 
 4. Set `PICO_GCC_ROOT` environment variable to point to the `bin` directory of your `arm-none-eabi` toolchain. For macOS, it is set to `brew --prefix`; typically this is `/usr/local` on x86_64 architecture and `/opt/homebrew` on arm64.
 
@@ -177,6 +184,10 @@ The Raspberry Pi Pico 2 has the following features:
 	mkdir build
 	cd build
 	cmake ..
+	make
+	
+	cd pioasm
+	cmake $PICO_SDK_DIR/tools/pioasm
 	make
 	```
 
@@ -294,6 +305,10 @@ Not yet available.
 	mkdir build
 	cd build
 	cmake ..
+	make
+	
+	cd pioasm
+	cmake $PICO_SDK_DIR/tools/pioasm
 	make
 	```
 

@@ -1049,6 +1049,11 @@ $(LIB_DIR)/buildinfo.c.o: $(SDK_GLUE_OBJ) $(XS_OBJ) $(TMP_DIR)/mc.xs.c.o $(TMP_D
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $(LIB_DIR)/buildinfo.c -o $@
 
 $(XS_OBJ): $(XS_HEADERS)
+
+$(LIB_DIR)/xsBigInt.c.o: xsBigInt.c
+	@echo "# * library xs:" $(<F)
+	$(CC) -Wno-incompatible-pointer-types $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
+
 $(LIB_DIR)/xs%.c.o: xs%.c
 	@echo "# library xs:" $(<F)
 	$(CC) $(C_FLAGS) $(C_INCLUDES) $(C_DEFINES) $< -o $@
