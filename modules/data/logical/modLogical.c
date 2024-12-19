@@ -60,7 +60,7 @@ static void xs_logical_op(xsMachine *the, int operation)
 	
 	if (xsmcArgc > 2) {
 		int count = xsmcToInteger(xsArg(2));
-		if ((count <= 0) || (count > dstLen))
+		if ((count <= 0) || (((xsUnsignedValue)count) > dstLen))
 			xsRangeError("invalid count");
 		dstLen = (xsUnsignedValue)count;
 	}
