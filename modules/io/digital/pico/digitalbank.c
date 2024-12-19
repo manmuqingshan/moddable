@@ -270,11 +270,14 @@ void xs_digitalbank_destructor(void *data)
 	if ((0 == digital->bank) && digital->pins) {
 		int pin;
 
-		if (digital->hasOnReadable)
-			gpio_remove_raw_irq_handler_masked(digital->pins, digitalISR);
-
 		for (pin = 0; pin <= 31; pin++) {
-			if (digital->pins & (1 << (pin & 0x1f))) {
+			uint32_t mask = 1 << (pin & 0x1f);
+			if (digital->pins & mask) {
+				if (digital->hasOnReadable) {
+					uint32_t event_mask = ((digital->falls & mask) ? GPIO_IRQ_EDGE_FALL : 0)
+							| ((digital->rises & mask) ? GPIO_IRQ_EDGE_RISE : 0);
+					gpio_set_irq_enabled_with_callback(pin, event_mask, false, digitalISR);
+				}
 				gpio_disable_pulls(pin);
 				gpio_deinit(pin);
 			}
