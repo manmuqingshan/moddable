@@ -120,9 +120,10 @@ class HTTPClient {
 					client.#state = "receiveResponseStatus";
 					client.#line = "";
 					client.#requestBody = false;
+					return 0;		// no more writable after request body has been sent
 				}
 
-				return client.#writable;
+				return Math.min(client.#writable, client.#requestBody);
 			}
 		}
 	}
@@ -305,14 +306,12 @@ class HTTPClient {
 
 		do {
 			if (this.#pendingWrite) {
-				let use = this.#pendingWrite.byteLength - this.#writePosition;
-				if (use > count) {
-					this.#write(new Uint8Array(this.#pendingWrite, this.#writePosition, count));
-					this.#writePosition += count;
+				const use = Math.min(this.#pendingWrite.byteLength - this.#writePosition, this.#writable);
+				this.#write(new Uint8Array(this.#pendingWrite, this.#writePosition, use));
+				this.#writePosition += use;
+				if (this.#writePosition !== this.#pendingWrite.byteLength)
 					return;
-				}
-				
-				this.#write(this.#pendingWrite);
+
 				this.#pendingWrite = undefined;
 			}
 
@@ -362,6 +361,8 @@ class HTTPClient {
 							if (writable <= 0)
 								return;
 						}
+						else
+							writable = Math.min(writable, this.#requestBody);
 						this.#current.onWritable?.call(this.#current.request, writable);
 					}
 					else {
