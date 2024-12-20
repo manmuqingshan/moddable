@@ -91,7 +91,7 @@ ifeq ($(HOST_OS),Darwin)
 		WAIT_FOR_COPY_COMPLETE = $(PLATFORM_DIR)/config/waitForVolume -x $(UF2_VOLUME_PATH)
 	endif
 
-	DO_PROGRAM = @echo "\# Programming: $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) " ; cp $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
+	DO_PROGRAM = @echo "\# Programming: $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) " ; cp -X $(BIN_DIR)/xs_pico.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
 
 ### Linux
 else
