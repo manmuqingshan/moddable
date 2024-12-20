@@ -488,21 +488,23 @@ void fx_Iterator_prototype_every(txMachine* the)
 	counter = 0;
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 1;
-	while (fxIteratorNext(the, iterator, next, value)) {
+	{
 		mxTry(the) {
-			mxPushUndefined();
-			mxPushSlot(predicate);
-			mxCall();
-			mxPushSlot(value);
-			mxPushInteger(counter);
-			mxRunCount(2);
-			mxResult->value.boolean = fxToBoolean(the, the->stack);
-			mxPop();
-			if (!mxResult->value.boolean) {
-				fxIteratorReturn(the, iterator, 0);
-				break;
+			while (fxIteratorNext(the, iterator, next, value)) {
+				mxPushUndefined();
+				mxPushSlot(predicate);
+				mxCall();
+				mxPushSlot(value);
+				mxPushInteger(counter);
+				mxRunCount(2);
+				mxResult->value.boolean = fxToBoolean(the, the->stack);
+				mxPop();
+				if (!mxResult->value.boolean) {
+					fxIteratorReturn(the, iterator, 0);
+					break;
+				}
+				counter++;
 			}
-			counter++;
 		}
 		mxCatch(the) {
 			fxIteratorReturn(the, iterator, 1);
@@ -580,23 +582,25 @@ void fx_Iterator_prototype_find(txMachine* the)
 	next = the->stack;
 	mxTemporary(value);
 	counter = 0;
-	while (fxIteratorNext(the, iterator, next, value)) {
+	{
 		mxTry(the) {
-			mxPushUndefined();
-			mxPushSlot(predicate);
-			mxCall();
-			mxPushSlot(value);
-			mxPushInteger(counter);
-			mxRunCount(2);
-			result = fxToBoolean(the, the->stack);
-			mxPop();
-			if (result) {
-				mxResult->kind = value->kind;
-				mxResult->value = value->value;
-				fxIteratorReturn(the, iterator, 0);
-				break;
+			while (fxIteratorNext(the, iterator, next, value)) {
+				mxPushUndefined();
+				mxPushSlot(predicate);
+				mxCall();
+				mxPushSlot(value);
+				mxPushInteger(counter);
+				mxRunCount(2);
+				result = fxToBoolean(the, the->stack);
+				mxPop();
+				if (result) {
+					mxResult->kind = value->kind;
+					mxResult->value = value->value;
+					fxIteratorReturn(the, iterator, 0);
+					break;
+				}
+				counter++;
 			}
-			counter++;
 		}
 		mxCatch(the) {
 			fxIteratorReturn(the, iterator, 1);
@@ -690,16 +694,18 @@ void fx_Iterator_prototype_forEach(txMachine* the)
 	next = the->stack;
 	mxTemporary(value);
 	counter = 0;
-	while (fxIteratorNext(the, iterator, next, value)) {
+	{
 		mxTry(the) {
-			mxPushUndefined();
-			mxPushSlot(procedure);
-			mxCall();
-			mxPushSlot(value);
-			mxPushInteger(counter);
-			mxRunCount(2);
-			mxPop();
-			counter++;
+			while (fxIteratorNext(the, iterator, next, value)) {
+				mxPushUndefined();
+				mxPushSlot(procedure);
+				mxCall();
+				mxPushSlot(value);
+				mxPushInteger(counter);
+				mxRunCount(2);
+				mxPop();
+				counter++;
+			}
 		}
 		mxCatch(the) {
 			fxIteratorReturn(the, iterator, 1);
@@ -788,17 +794,19 @@ void fx_Iterator_prototype_reduce(txMachine* the)
 		counter = 1;
 	}
 	mxPullSlot(mxResult);
-	while (fxIteratorNext(the, iterator, next, value)) {
+	{
 		mxTry(the) {
-			mxPushUndefined();
-			mxPushSlot(reducer);
-			mxCall();
-			mxPushSlot(mxResult);
-			mxPushSlot(value);
-			mxPushInteger(counter);
-			mxRunCount(3);
-			mxPullSlot(mxResult);
-			counter++;
+			while (fxIteratorNext(the, iterator, next, value)) {
+				mxPushUndefined();
+				mxPushSlot(reducer);
+				mxCall();
+				mxPushSlot(mxResult);
+				mxPushSlot(value);
+				mxPushInteger(counter);
+				mxRunCount(3);
+				mxPullSlot(mxResult);
+				counter++;
+			}
 		}
 		mxCatch(the) {
 			fxIteratorReturn(the, iterator, 1);
@@ -831,21 +839,23 @@ void fx_Iterator_prototype_some(txMachine* the)
 	counter = 0;
 	mxResult->kind = XS_BOOLEAN_KIND;
 	mxResult->value.boolean = 0;
-	while (fxIteratorNext(the, iterator, next, value)) {
+	{
 		mxTry(the) {
-			mxPushUndefined();
-			mxPushSlot(predicate);
-			mxCall();
-			mxPushSlot(value);
-			mxPushInteger(counter);
-			mxRunCount(2);
-			mxResult->value.boolean = fxToBoolean(the, the->stack);
-			mxPop();
-			if (mxResult->value.boolean) {
-				fxIteratorReturn(the, iterator, 0);
-				break;
+			while (fxIteratorNext(the, iterator, next, value)) {
+				mxPushUndefined();
+				mxPushSlot(predicate);
+				mxCall();
+				mxPushSlot(value);
+				mxPushInteger(counter);
+				mxRunCount(2);
+				mxResult->value.boolean = fxToBoolean(the, the->stack);
+				mxPop();
+				if (mxResult->value.boolean) {
+					fxIteratorReturn(the, iterator, 0);
+					break;
+				}
+				counter++;
 			}
-			counter++;
 		}
 		mxCatch(the) {
 			fxIteratorReturn(the, iterator, 1);
