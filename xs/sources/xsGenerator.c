@@ -350,7 +350,7 @@ void fxSetterThatIgnoresPrototypeProperties(txMachine* the, txSlot* reference, t
 	if (home->value.home.object == instance)
 		mxTypeError("set %s: not writable", name);
 	mxTemporary(property);
-	if (mxBehaviorGetOwnProperty(the, instance, id, 0, property)) {
+	if (!mxBehaviorGetOwnProperty(the, instance, id, 0, property)) {
 		if (!mxBehaviorDefineOwnProperty(the, instance, id, 0, value, XS_NO_FLAG))
 			mxTypeError("set %s: not extensible", name);
 	}
