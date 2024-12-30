@@ -91,7 +91,6 @@ class WebSocket {
 						break;
 
 					case this.#client.constructor.ping:
-						trace("PING!\n");
 						break;
 
 					case this.#client.constructor.pong:

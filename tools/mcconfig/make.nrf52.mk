@@ -105,7 +105,7 @@ ifeq ($(HOST_OS),Darwin)
 		SET_PROGRAMMING_MODE = @echo Use the target installDFU or debugDFU.
 		DO_PROGRAM =
 	else
-		DO_PROGRAM = @echo Programming: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME) ; cp $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
+		DO_PROGRAM = @echo Programming: $(BIN_DIR)/xs_nrf52.hex to $(UF2_VOLUME_NAME) ; cp -X $(BIN_DIR)/xs_nrf52.uf2 $(UF2_VOLUME_PATH) ; $(WAIT_FOR_COPY_COMPLETE)
 	endif
 
 # END of Darwin
