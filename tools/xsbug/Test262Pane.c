@@ -22,13 +22,11 @@
 
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
 
-#define mxFeaturesCount 16
+#define mxFeaturesCount 13
 static char* gxFeatures[mxFeaturesCount] = { 
 	"Array.fromAsync",
 	"Atomics.pause",
-	"Error.isError",
 	"FinalizationRegistry.prototype.cleanupSome",
- 	"Float16Array",
  	"Math.sumPrecise",
  	"RegExp.escape",
  	"ShadowRealm",
@@ -36,7 +34,6 @@ static char* gxFeatures[mxFeaturesCount] = {
 	"arbitrary-module-namespace-names",
 	"decorators",
 	"import-assertions",
-	"iterator-helpers",
 	"json-parse-with-source",
 	"source-phase-imports",
 	"source-phase-imports-module-source"
