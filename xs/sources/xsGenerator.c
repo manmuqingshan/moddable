@@ -40,6 +40,7 @@
 //#define mxPromisePrint 1
 
 
+static txSlot* fxCheckIteratorStep(txMachine* the, txSlot* slot);
 static txBoolean fxGetIteratorFlattenable(txMachine* the, txSlot* iterable, txSlot* iterator, txSlot* next, txBoolean optional);
 static txSlot* fxNewIteratorHelperInstance(txMachine* the, txSlot* iterator, txInteger step);
 
@@ -201,6 +202,14 @@ const txIteratorStep ICACHE_FLASH_ATTR gxIteratorSteps[mxIteratorStepCount]  = {
 	fx_Iterator_prototype_take_step,
 };
 
+const txID ICACHE_FLASH_ATTR gxIteratorStepIDs[mxIteratorStepCount]  = {
+	mxID(_drop),
+	mxID(_filter),
+	mxID(_flatMap),
+	mxID(_map),
+	mxID(_take),
+};
+
 txSlot* fxCheckIteratorInstance(txMachine* the, txSlot* slot, txID id)
 {
 	txSlot* instance;
@@ -223,6 +232,20 @@ txSlot* fxCheckIteratorResult(txMachine* the, txSlot* result)
 	mxCheck(the, (value != C_NULL) && (value->ID == mxID(_value)));
 	mxCheck(the, (value->next != C_NULL) && (value->next->ID == mxID(_done)));
 	return value;
+}
+
+txSlot* fxCheckIteratorStep(txMachine* the, txSlot* slot) 
+{
+	if (slot && (slot->kind == XS_INTEGER_KIND)) {
+		txInteger step = slot->value.integer;
+		if ((0 <= step) && (step < mxIteratorStepCount)) {
+			if (slot->ID == gxIteratorStepIDs[step]) {
+				return slot;
+			}
+		}
+	}
+	mxTypeError("this: not an iterator helper");
+	return C_NULL;
 }
 
 txBoolean fxIteratorNext(txMachine* the, txSlot* iterator, txSlot* next, txSlot* value)
@@ -958,6 +981,7 @@ txSlot* fxNewIteratorHelperInstance(txMachine* the, txSlot* iterator, txInteger 
 	mxPush(mxIteratorHelperPrototype);
 	instance = fxNewIteratorInstance(the, iterator, mxID(_Iterator));
 	property = fxLastProperty(the, instance);
+	property->ID = gxIteratorStepIDs[step];
 	property->value.integer = step;
 	mxPushSlot(iterator);
 	mxGetID(mxID(_next));
@@ -971,7 +995,7 @@ void fx_IteratorHelper_prototype_next(txMachine* the)
 	txSlot* instance = fxCheckIteratorInstance(the, mxThis, mxID(_Iterator));
 	txSlot* result = instance->next;
 	txSlot* iterator = result->next;
-	txSlot* step = iterator->next;
+	txSlot* step = fxCheckIteratorStep(the, iterator->next);
 	txSlot* next = step->next;
 	txSlot* extra = next->next;
 	txSlot* value = fxCheckIteratorResult(the, result);
@@ -1006,7 +1030,7 @@ void fx_IteratorHelper_prototype_return(txMachine* the)
 	txSlot* instance = fxCheckIteratorInstance(the, mxThis, mxID(_Iterator));
 	txSlot* result = instance->next;
 	txSlot* iterator = result->next;
-	txSlot* step = iterator->next;
+	txSlot* step = fxCheckIteratorStep(the, iterator->next);
 	txSlot* next = step->next;
 	txSlot* extra = next->next;
 	txSlot* value = fxCheckIteratorResult(the, result);
