@@ -230,9 +230,9 @@ Each git repository to fetch is specified by an object in the `include` array of
 - The object must have a `"git"` property, which is the git URL of the repo.
 - The object can have an `"manifest"` property, which is either the path of the manifest file to include, or the manifest object itself.
 
-The default value of the `"manifest"` property is `"manifest.json"`. 
+The default value of the `"manifest"` property is `"manifest.json"`.
 
-> **Note**: When mconfig or mcrun evaluate the manifest file or object, the current directory is the directory of the git repository. 
+> **Note**: When mconfig or mcrun evaluate the manifest file or object, the current directory is the directory of the git repository.
 
 ```json
 {
@@ -629,7 +629,7 @@ For example, if the `platforms` object of a manifest is as follows, building for
 }
 ```
 
-The `esp32` platform has an additional property `dependency` which can be used to [add ESP Registry components](../devices/esp32/manifest.md#idf-components) to your project.
+The `esp32` platform has an additional property `dependency` which can be used to [add ESP Registry components](../devices/esp32.md#idf-components) to your project.
 
 ```json
 	"platforms": {
