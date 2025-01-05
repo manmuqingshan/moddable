@@ -877,7 +877,7 @@ void fxSetHostBuffer(txMachine* the, txSlot* slot, void* theData, txSize theSize
 		bufferInfo->value.bufferInfo.length = theSize;
 	}
 	else
-		mxSyntaxError("C: xsSetHostData: not a host object");
+		mxSyntaxError("C: xsSetHostBuffer: not a host object");
 }
 
 void *fxSetHostChunk(txMachine* the, txSlot* slot, void* theValue, txSize theSize)
