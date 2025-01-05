@@ -197,10 +197,16 @@ printf("fifo_init - bad size: %ld\r\n", size);
 #endif
 
 #ifdef mxDebug
+uint8_t jtagReady = 1;
+uint8_t jtag0_position = 0, jtag0_available = 0;
+uint8_t jtag1_position = 0, jtag1_available = 0;
+static uint8_t jtag0[128];
+static uint8_t jtag1[128];
+
 static void debug_task(void *pvParameter)
 {
 #if (USE_USB == 2)
-	usb_serial_jtag_driver_config_t cfg = { .rx_buffer_size = 4096, .tx_buffer_size = 2048 };
+	usb_serial_jtag_driver_config_t cfg = { .rx_buffer_size = 512, .tx_buffer_size = 512 };
 	usb_serial_jtag_driver_install(&cfg);
 #endif
 
@@ -216,9 +222,22 @@ static void debug_task(void *pvParameter)
 		fxReceiveLoop();
 
 #elif (USE_USB == 2)
-		fxReceiveLoop();
-		modDelayMilliseconds(5);
+		if (0 == jtagReady) {
+			int amt = usb_serial_jtag_read_bytes(jtag1, sizeof(jtag1), 5);
+			if (0 == amt)
+				continue;
+			jtag1_position = 0;
+			jtag1_available = (uint8_t)amt;  
+		}
+		else {
+			int amt = usb_serial_jtag_read_bytes(jtag0, sizeof(jtag0), 5);
+			if (0 == amt)
+				continue;
+			jtag0_position = 0;
+			jtag0_available = (uint8_t)amt;  
+		}
 
+		fxReceiveLoop();
 #else	// !USE_USB
 
 		uart_event_t event;
@@ -435,7 +454,29 @@ WEAK int ESP_getc(void) {
 	int amt;
 	uint8_t c;
 #if (USE_USB == 2)
-	amt = usb_serial_jtag_read_bytes(&c, 1, 1);
+	if (0 == jtagReady) {
+		if (jtag0_available) {
+			jtag0_available--;
+			return jtag0[jtag0_position++];
+		}
+		else if (jtag1_available) {
+			jtagReady = 1;
+			jtag1_available--;
+			return jtag1[jtag1_position++];
+		}
+	}
+	else {
+		if (jtag1_available) {
+			jtag1_available--;
+			return jtag1[jtag1_position++];
+		}
+		else if (jtag0_available) {
+			jtagReady = 0;
+			jtag0_available--;
+			return jtag0[jtag0_position++];
+		}
+	}
+	return -1;
 #else
 	amt = uart_read_bytes(USE_UART, &c, 1, 0);
 #endif
@@ -444,7 +485,7 @@ WEAK int ESP_getc(void) {
 
 WEAK uint8_t ESP_isReadable() {
 #if (USE_USB == 2)
-	return true;
+	return jtag0_available || jtag1_available;
 #else
 	size_t s;
 	uart_get_buffered_data_len(USE_UART, &s);
