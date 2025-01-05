@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -925,12 +925,6 @@ void fxDebugParse(txMachine* the)
 		case XS_CDATA_STATE:
 			if (c == ']') 
 				the->debugState = XS_END_CDATA_STATE_1;
-			else if (c == 0) {
-				fxDebugScriptCDATA(the, 0xF4);
-				fxDebugScriptCDATA(the, 0x90);
-				fxDebugScriptCDATA(the, 0x80);
-				fxDebugScriptCDATA(the, 0x80);
-			}
 			else
 				fxDebugScriptCDATA(the, c);
 			break;
@@ -945,7 +939,8 @@ void fxDebugParse(txMachine* the)
 			break;
 		case XS_END_CDATA_STATE_2:
 			if (c == '>') {
-				fxDebugScriptCDATA(the, 0);
+				fxDebugScriptCDATA(the, 0xff);
+				(the->stack[2].value.string)[the->stack[1].value.integer - 1] = 0;
 				the->debugState = XS_BODY_STATE;
 			}
 			else {
@@ -1201,6 +1196,11 @@ void fxDebugPushTag(txMachine* the)
 void fxDebugScriptCDATA(txMachine* the, char c)
 {
 #if MODDEF_XS_XSBUG_HOOKS
+	if (0 == c) {
+		fxDebugScriptCDATA(the, 0xC0);
+		c = 0x80;
+	}
+
 	if ((the->debugTag == XS_MODULE_TAG) || (the->debugTag == XS_SCRIPT_TAG)) {
 		txString string = the->stack[2].value.string;
 		txInteger size = the->stack[1].value.integer;
