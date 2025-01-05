@@ -313,7 +313,7 @@ class Connection {
 					} break;
 
 				case "sendResponseBody": {
-					if ((0 === this.#remaining) || (undefined === this.#remaining)) {
+					if (0 === this.#remaining) {
 						this.#done();
 						return;
 					}
