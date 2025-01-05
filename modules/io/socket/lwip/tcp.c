@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -708,6 +708,8 @@ void xs_listener_constructor(xsMachine *the)
 		xsRangeError("no memory");
 	}
 
+	modInstrumentationAdjust(NetworkSockets, +1);
+
 	xsmcSetHostData(xsThis, listener);
 	listener->obj = xsThis;
 	xsRemember(listener->obj);
@@ -739,6 +741,8 @@ void xs_listener_destructor_(void *data)
 	}
 
 	c_free(listener);
+
+	modInstrumentationAdjust(NetworkSockets, -1);
 }
 
 void xs_listener_close_(xsMachine *the)
