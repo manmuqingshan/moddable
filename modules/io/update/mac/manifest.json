@@ -1,0 +1,13 @@
+{
+	"platforms": {
+		"mac": {
+			"modules": {
+				"*": "$(MODDABLE)/modules/io/common/builtinCommon",
+				"embedded:x-update": "./update-mac"
+			}
+		}
+	},
+	"preload": [
+		"embedded:x-update"
+	]
+}
