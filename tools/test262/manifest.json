@@ -81,14 +81,14 @@
 			"creation": {
 				"static": 0,
 				"chunk": {
-					"initial": 3145728,
+					"initial": 3670016,
 					"incremental": 0 
 				},
 				"heap": {
-					"initial": 196608,
+					"initial": 229376,
 					"incremental": 0 
 				},
-				"stack": 1024,
+				"stack": 16384,
 				"keys": {
 					"available": 16386,
 					"name": 127,
