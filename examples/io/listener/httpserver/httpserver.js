@@ -120,7 +120,7 @@ class Connection {
 				throw new Error("bad data");
 
 //@@ this may not be always correct... if last chunk has already flushed and onWritable called, this will never go out
-			this.#pendingWrite = ArrayBuffer.fromString("0000\r\n\r\n");
+			this.#pendingWrite = ArrayBuffer.fromString("0\r\n\r\n");
 			this.#remaining = 0;
 			this.#timer = Timer.set(() => {
 				this.#timer = undefined;
@@ -133,17 +133,17 @@ class Connection {
 		const byteLength = data.byteLength;
 		if (true === this.#remaining) {
 			if ((byteLength + 8) > this.#writable)
-				throw new Error("too much");
+				throw new Error("would block");
 
-			this.#socket.write(ArrayBuffer.fromString(byteLength.toString(16).padStart(4, "0") + "\r\n"), more);
+			this.#socket.write(ArrayBuffer.fromString(byteLength.toString(16) + "\r\n"), more);
 			this.#socket.write(data, more);
 			this.#writable = this.#socket.write(ArrayBuffer.fromString("\r\n"));
 
-			return (this.#writable > 8) ? (this.#writable - 8) : 0 
+			return (this.#writable > 8) ? (this.#writable - 8) : 0;
 		}
 		else {
 			if ((byteLength > this.#writable) || (byteLength > this.#remaining))
-				throw new Error("too much");
+				throw new Error("would block");
 
 			this.#writable = this.#socket.write(data);
 
@@ -271,14 +271,12 @@ class Connection {
 
 		while (this.#writable) {
 			if (this.#pendingWrite) {
-				let use = this.#pendingWrite.byteLength - this.#writePosition;
-				if (use > count) {
-					this.#writable = this.#socket.write(new Uint8Array(this.#pendingWrite, this.#writePosition, count));
-					this.#writePosition += count;
+				const use = Math.min(this.#pendingWrite.byteLength - this.#writePosition, this.#writable);
+				this.#writable = this.#socket.write(new Uint8Array(this.#pendingWrite, this.#writePosition, use));
+				this.#writePosition += use;
+				if (this.#writePosition !== this.#pendingWrite.byteLength)
 					return;
-				}
-				
-				this.#writable = this.#socket.write(this.#pendingWrite);
+
 				this.#pendingWrite = undefined;
 			}
 
