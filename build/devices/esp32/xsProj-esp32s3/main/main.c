@@ -223,14 +223,14 @@ static void debug_task(void *pvParameter)
 
 #elif (USE_USB == 2)
 		if (0 == jtagReady) {
-			int amt = usb_serial_jtag_read_bytes(jtag1, sizeof(jtag1), 5);
+			int amt = usb_serial_jtag_read_bytes(jtag1, sizeof(jtag1), 1);
 			if (0 == amt)
 				continue;
 			jtag1_position = 0;
 			jtag1_available = (uint8_t)amt;  
 		}
 		else {
-			int amt = usb_serial_jtag_read_bytes(jtag0, sizeof(jtag0), 5);
+			int amt = usb_serial_jtag_read_bytes(jtag0, sizeof(jtag0), 1);
 			if (0 == amt)
 				continue;
 			jtag0_position = 0;
@@ -432,7 +432,7 @@ WEAK void ESP_put(uint8_t *c, int count) {
 	while (count > 0) {
 		sent = usb_serial_jtag_write_bytes(c, count, 10);
 		if (sent <= 0)
-			return;
+			break;
 		c += sent;
 		count -= sent;
 	}
