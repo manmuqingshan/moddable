@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -451,9 +451,8 @@ WEAK void ESP_putc(int c) {
 }
 
 WEAK int ESP_getc(void) {
-	int amt;
-	uint8_t c;
 #if (USE_USB == 2)
+#ifdef mxDebug
 	if (0 == jtagReady) {
 		if (jtag0_available) {
 			jtag0_available--;
@@ -476,16 +475,22 @@ WEAK int ESP_getc(void) {
 			return jtag0[jtag0_position++];
 		}
 	}
+#endif /* xDebug */
 	return -1;
-#else
-	amt = uart_read_bytes(USE_UART, &c, 1, 0);
-#endif
+#else /* USE_USB != 2 */
+	uint8_t c;
+	int amt = uart_read_bytes(USE_UART, &c, 1, 0);
 	return (1 == amt) ? c : -1;
+#endif
 }
 
 WEAK uint8_t ESP_isReadable() {
 #if (USE_USB == 2)
+#ifdef mxDebug
 	return jtag0_available || jtag1_available;
+#else
+	return 0;
+#endif
 #else
 	size_t s;
 	uart_get_buffered_data_len(USE_UART, &s);
