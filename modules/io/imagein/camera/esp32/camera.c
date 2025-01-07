@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024  Moddable Tech, Inc.
+ * Copyright (c) 2024-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -42,6 +42,12 @@
 	#else
 		#define MODDEF_CAMERA_I2C_PORT	0
 	#endif
+#endif
+#ifndef MODDEF_CAMERA_XCLK_FREQ_HZ
+	#define MODDEF_CAMERA_XCLK_FREQ_HZ (24000000)
+#endif
+#ifndef MODDEF_CAMERA_JPEG_QUALITY
+	#define MODDEF_CAMERA_JPEG_QUALITY (12)
 #endif
 
 static void xs_camera_mark(xsMachine *the, void *it, xsMarkRoot markRoot);
@@ -159,14 +165,14 @@ static camera_config_t camera_config = {
 	.pin_href = MODDEF_CAMERA_HREF,
 	.pin_pclk = MODDEF_CAMERA_PCLK,
 
-	.xclk_freq_hz = 24000000,
+	.xclk_freq_hz = MODDEF_CAMERA_XCLK_FREQ_HZ,
 	.ledc_timer = LEDC_TIMER_0,
 	.ledc_channel = LEDC_CHANNEL_0,
 
 	.pixel_format = PIXFORMAT_RGB565,
 	.frame_size = FRAMESIZE_VGA,
 
-	.jpeg_quality = 12,
+	.jpeg_quality = MODDEF_CAMERA_JPEG_QUALITY,
 	.fb_count = 3,
 	.fb_location = CAMERA_FB_IN_PSRAM,
 	.grab_mode = CAMERA_GRAB_LATEST,		// vs. CAMERA_GRAB_WHEN_EMPTY
