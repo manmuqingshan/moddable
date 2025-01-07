@@ -1,5 +1,5 @@
 class Flash @ "xs_flashstorage_destructor" {
-	constructor(options) @ "xs_flashstorage"
+	constructor() {throw new TypeError}
 	close() @ "xs_flashstorage_close"
 
 	eraseBlock(start, end) @ "xs_flashstorage_eraseBlock"
