@@ -112,6 +112,7 @@
 #define mxMinusZero 1
 #define mxRegExpUnicodePropertyEscapes 1
 #define mxStringNormalize 1
+#define mxWithHasGetSequence 1
 
 #define mxUseDefaultBuildKeys 1
 #define mxUseDefaultChunkAllocation 1

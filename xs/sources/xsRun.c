@@ -2278,6 +2278,7 @@ XS_CODE_JUMP:
 			offset = mxRunID(1);
 			index = 0;
 			mxNextCode(1 + sizeof(txID));
+		#ifdef mxWithHasGetSequence
 			if (variable->next && ((variable->next->ID == XS_ENVIRONMENT_BEHAVIOR) || (variable->next->ID == XS_GLOBAL_BEHAVIOR))) {
 			}
 			else {
@@ -2293,6 +2294,7 @@ XS_CODE_JUMP:
 				else 
 					index = 0;
 			}
+		#endif
 			slot = mxBehaviorGetProperty(the, variable, (txID)offset, index, XS_ANY);
 			if (slot) {
 				if (slot->kind < 0)
