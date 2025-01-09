@@ -22,7 +22,7 @@
 
 static yaml_node_t *fxGetMappingValue(yaml_document_t* document, yaml_node_t* mapping, char* name);
 
-#define mxFeaturesCount 13
+#define mxFeaturesCount 14
 static char* gxFeatures[mxFeaturesCount] = { 
 	"Array.fromAsync",
 	"Atomics.pause",
@@ -34,6 +34,7 @@ static char* gxFeatures[mxFeaturesCount] = {
 	"arbitrary-module-namespace-names",
 	"decorators",
 	"import-assertions",
+	"iterator-sequencing",
 	"json-parse-with-source",
 	"source-phase-imports",
 	"source-phase-imports-module-source"
