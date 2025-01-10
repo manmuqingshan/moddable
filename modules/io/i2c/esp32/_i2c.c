@@ -63,7 +63,7 @@ static void _xs_i2c_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
 static SemaphoreHandle_t gI2CMutex;
 
-static void *modI2CDValidate(xsMachine *the, xsSlot *instance);
+static void *modI2CValidate(xsMachine *the, xsSlot *instance);
 static uint8_t modI2CDeactivate(void *instanceData);
 
 static const xsI2CHostHooksRecord ICACHE_RODATA_ATTR xsI2CHooks = {
@@ -72,7 +72,7 @@ static const xsI2CHostHooksRecord ICACHE_RODATA_ATTR xsI2CHooks = {
 		_xs_i2c_mark,
 		"i2c"
 	},
-	.doValidate = modI2CDValidate,
+	.doValidate = modI2CValidate,
 	.doDeactivate = modI2CDeactivate,
 };
 
@@ -80,7 +80,7 @@ void _xs_i2c_constructor(xsMachine *the)
 {
 	I2C i2c;
 	int data, clock, hz, address;
-	int timeout = 32000;
+	int timeout = 32000;		// 400 ms (same as default I2C_SLAVE_TIMEOUT_DEFAULT)
 	uint8_t pullup = GPIO_PULLUP_ENABLE;
 	int port = I2C_NUM_0;
 
@@ -403,7 +403,7 @@ uint8_t usingPins(uint32_t data, uint32_t clock)
 	return 0;
 }
 
-void *modI2CDValidate(xsMachine *the, xsSlot *instance)
+void *modI2CValidate(xsMachine *the, xsSlot *instance)
 {
 	return xsmcGetHostDataValidate(*instance, (xsHostHooks *)&xsI2CHooks);
 }

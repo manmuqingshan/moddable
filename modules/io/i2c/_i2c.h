@@ -20,12 +20,12 @@
 
 #include "xs.h"
 
-typedef void  *(*modI2CDValidateFunc)(xsMachine *the, xsSlot *instance);
+typedef void  *(*modI2CValidateFunc)(xsMachine *the, xsSlot *instance);
 typedef uint8_t (*modI2CDeactiateFunc)(void *instanceData);
 
 struct xsI2CHostHooksRecord {
 	xsHostHooks				hooks;
-	modI2CDValidateFunc		doValidate;
+	modI2CValidateFunc		doValidate;
 	modI2CDeactiateFunc		doDeactivate;
 };
 
