@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024  Moddable Tech, Inc.
+ * Copyright (c) 2019-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -30,6 +30,7 @@
 #include "xsmc.h"			// xs bindings for microcontroller
 #include "xsHost.h"			// esp platform support
 #include "mc.xs.h"			// for xsID_* values
+#include "digitalbank.h"
 
 #include "builtinCommon.h"
 
@@ -75,12 +76,21 @@ static void digitalISR(void *refcon);
 static void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageLength);
 static void xs_digitalbank_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 
+static void *modDigitalBankValidate(xsMachine *the, xsSlot *instance);
+static uint32_t modDigitalBankRead(void *instanceData);
+static void modDigitalBankWrite(void *instanceData, uint32_t value);
+
 static Digital gDigitals;	// pins with onReadable callbacks
 
-/* static */ const xsHostHooks ICACHE_RODATA_ATTR xsDigitalBankHooks = {
-	xs_digitalbank_destructor,
-	xs_digitalbank_mark,
-	NULL
+static const xsDigitalBankHostHooksRecord ICACHE_RODATA_ATTR xsDigitalBankHooks = {
+	.hooks = {
+		xs_digitalbank_destructor,
+		xs_digitalbank_mark,
+		"digitalbank"
+	},
+	.doValidate = modDigitalBankValidate,
+	.doRead = modDigitalBankRead,
+	.doWrite = modDigitalBankWrite
 };
 
 void xs_digitalbank_constructor(xsMachine *the)
@@ -309,61 +319,23 @@ void xs_digitalbank_close(xsMachine *the)
 void xs_digitalbank_read(xsMachine *the)
 {
 	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
-	uint32_t result;
 
 	if (!digital->isInput)
 		xsUnknownError("can't read output");
 
-	gpio_dev_t *hw = &GPIO;
-
-#if kCPUESP32C3
-	result = hw->in.data;
-#elif kCPUESP32C6 || kCPUESP32H2
-	result = hw->in.val;
-#else
-    if (digital->bank)
-        result = hw->in1.data;
-    else
-        result = hw->in;
-#endif
-
-	xsmcSetInteger(xsResult, result & digital->pins);
+	uint32_t result = modDigitalBankRead(digital);
+	xsmcSetInteger(xsResult, result);
 }
 
 void xs_digitalbank_write(xsMachine *the)
 {
 	Digital digital = xsmcGetHostDataValidate(xsThis, (void *)&xsDigitalBankHooks);
-	uint32_t value;
 
 	if (digital->isInput)
 		xsUnknownError("can't write input");
 
-	gpio_dev_t *hw = &GPIO;
-	value = xsmcToInteger(xsArg(0)) & digital->pins;
-
-#if kCPUESP32C3 || kCPUESP32H2
-	hw->out_w1ts.out_w1ts = value;
-	hw->out_w1tc.out_w1tc = ~value & digital->pins;
-#else
-	if (digital->bank) {
-#if kCPUESP32C6
-		hw->out1_w1ts.val = value;
-		hw->out1_w1tc.val = ~value & digital->pins;
-#else
-		hw->out1_w1ts.data = value;
-		hw->out1_w1tc.data = ~value & digital->pins;
-#endif
-	}
-	else {
-#if kCPUESP32C6
-		hw->out_w1ts.val = value;
-		hw->out_w1tc.val = ~value & digital->pins;
-#else
-		hw->out_w1ts = value;
-		hw->out_w1tc = ~value & digital->pins;
-#endif
-	}
-#endif
+	uint32_t value = xsmcToInteger(xsArg(0));
+	modDigitalBankWrite(digital, value);
 }
 
 void IRAM_ATTR digitalISR(void *refcon)
@@ -418,11 +390,18 @@ void digitalDeliver(void *the, void *refcon, uint8_t *message, uint16_t messageL
 	xsEndHost(digital->the);
 }
 
-
-//@@ verify read is allowed
-uint32_t modDigitalBankRead(Digital digital)
+void *modDigitalBankValidate(xsMachine *the, xsSlot *instance)
 {
+	return xsmcGetHostDataValidate(*instance, (xsHostHooks *)&xsDigitalBankHooks);
+}
+
+uint32_t modDigitalBankRead(void *instanceData)
+{
+	Digital digital = instanceData;
 	gpio_dev_t *hw = &GPIO;
+
+	if (!digital->isInput)
+		return 0;
 
 #if kCPUESP32C3
 	return hw->in.data & digital->pins;
@@ -436,23 +415,36 @@ uint32_t modDigitalBankRead(Digital digital)
 #endif
 }
 
-//@@ verify write is allowed
-void modDigitalBankWrite(Digital digital, uint32_t value)
+void modDigitalBankWrite(void *instanceData, uint32_t value)
 {
+	Digital digital = instanceData;
 	gpio_dev_t *hw = &GPIO;
 	value &= digital->pins;
 
-#if kCPUESP32C3 || kCPUESP32C6 || kCPUESP32H2
+	if (digital->isInput)
+		return;
+
+#if kCPUESP32C3 || kCPUESP32H2
 	hw->out_w1ts.out_w1ts = value;
 	hw->out_w1tc.out_w1tc = ~value & digital->pins;
 #else
 	if (digital->bank) {
+#if kCPUESP32C6
+		hw->out1_w1ts.val = value;
+		hw->out1_w1tc.val = ~value & digital->pins;
+#else
 		hw->out1_w1ts.data = value;
 		hw->out1_w1tc.data = ~value & digital->pins;
+#endif
 	}
 	else {
+#if kCPUESP32C6
+		hw->out_w1ts.val = value;
+		hw->out_w1tc.val = ~value & digital->pins;
+#else
 		hw->out_w1ts = value;
 		hw->out_w1tc = ~value & digital->pins;
+#endif
 	}
 #endif
 }
