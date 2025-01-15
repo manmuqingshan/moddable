@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016-2024  Moddable Tech, Inc.
+# Copyright (c) 2016-2025  Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -38,7 +38,7 @@ endif
 PROGRAMMING_VID ?= 303a
 PROGRAMMING_PID ?= 1001
 
-EXPECTED_ESP_IDF ?= v5.3.1
+EXPECTED_ESP_IDF ?= v5.3.2
 
 # ESP32_SUBCLASS is to find some include files in IDFv4
 # values include esp32, esp32s3 and esp32s2
@@ -157,7 +157,7 @@ DRIVER_DIRS = \
 	$(IDF_PATH)/components/esp_driver_sdmmc/include \
 	$(IDF_PATH)/components/esp_driver_spi/include \
 	$(IDF_PATH)/components/esp_driver_uart/include
-
+ 
 INC_DIRS = \
 	$(DRIVER_DIRS) \
 	$(MANAGED_COMPONENT_DIRS) \
@@ -406,6 +406,16 @@ PROJ_DIR_FILES = \
 	$(PROJ_DIR)/partitions.csv \
 	$(PROJ_DIR)/Makefile
 
+ifeq ($(USE_USB),1) 
+	PROJ_DIR_FILES += $(PROJ_DIR)/main/debugger_tinyusb.c
+else
+	ifeq ($(USE_USB),2)
+		PROJ_DIR_FILES += $(PROJ_DIR)/main/debugger_cdc.c
+	else
+		PROJ_DIR_FILES += $(PROJ_DIR)/main/debugger_uart.c
+	endif
+endif
+
 ifneq ($(BOOTLOADERPATH),)
 	PROJ_DIR_FILES += $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c
 endif
@@ -416,16 +426,24 @@ ifeq ($(UPLOAD_PORT),)
 	else
 		PORT_SET = 
 	endif
-	SERIAL2XSBUG_PORT = $$PORT_USED
+	ifeq ($(DEBUGGER_PORT),)
+		SERIAL2XSBUG_PORT = $$PORT_USED
+	else
+		SERIAL2XSBUG_PORT = $(DEBUGGER_PORT)
+	endif
 else
 	PORT_SET = -p $(UPLOAD_PORT)
-	SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
+	ifeq ($(DEBUGGER_PORT),)
+		SERIAL2XSBUG_PORT = $(UPLOAD_PORT)
+	else
+		SERIAL2XSBUG_PORT = $(DEBUGGER_PORT)
+	endif
 endif
 
 PORT_NAME_PATH = /tmp/_default_port.tmp
 KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 
-BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)"
+BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32=$(ESP32_TARGET) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)"
 BUILD_ERR = "ESP-IDF Build Failed"
 DEPLOY_CMD = idf.py -p `$(PLATFORM_DIR)/config/idfSerialPort` -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED)
 IDF_RECONFIGURE_CMD = idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(USB_OPTION)
@@ -446,7 +464,8 @@ BUILD_IDF_PARTS = cd $(PROJ_DIR) ; \
 DO_PROGRAM = cd $(PROJ_DIR) ; bash -c "set -o pipefail; $(DEPLOY_CMD) | tee $(PROJ_DIR)/flashOutput"
 
 
-CONNECT_XSBUG = cd $(PROJ_DIR); PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); $(DO_LAUNCH)
+# CONNECT_XSBUG = cd $(PROJ_DIR); PORT_USED=$$(grep 'Serial port' $(PROJ_DIR)/flashOutput | awk 'END{print($$3)}'); $(DO_LAUNCH)
+CONNECT_XSBUG = cd $(PROJ_DIR); PORT_USED=$$($(PLATFORM_DIR)/config/idfSerialPort) ; $(DO_LAUNCH)
 
 ifeq ($(DEBUG),1)
 	ifeq ($(HOST_OS),Darwin)
@@ -658,6 +677,15 @@ $(PROJ_DIR)/main:
 
 $(PROJ_DIR)/main/main.c: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/main.c
 	cp -f $(PROJ_DIR_TEMPLATE)/main/main.c $@
+
+$(PROJ_DIR)/main/debugger_uart.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_uart.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_uart.c $@
+
+$(PROJ_DIR)/main/debugger_cdc.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_cdc.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_cdc.c $@
+
+$(PROJ_DIR)/main/debugger_tinyusb.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_tinyusb.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_tinyusb.c $@
 
 $(PROJ_DIR)/main/component.mk: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/component.mk
 	cp -f $(PROJ_DIR_TEMPLATE)/main/component.mk $@

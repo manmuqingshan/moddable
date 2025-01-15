@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022-2024 Moddable Tech, Inc.
+# Copyright (c) 2020-2025 Moddable Tech, Inc.
 #
 #   This file is part of the Moddable SDK Tools.
 # 
@@ -37,6 +37,10 @@ endif()
 if (INSTRUMENT EQUAL "1")
     target_compile_options(${COMPONENT_TARGET} PRIVATE -DMODINSTRUMENTATION=1)
 endif()
+
+target_sources(${COMPONENT_TARGET} PRIVATE debugger_uart.c)
+
+target_compile_options(${COMPONENT_TARGET} PRIVATE -DESP32=${ESP32})
 
 add_prebuilt_library(xsesp32 ${CMAKE_BINARY_DIR}/xs_${ESP32_SUBCLASS}.a
 		REQUIRES esp_timer esp_wifi spi_flash bt esp_lcd nvs_flash spiffs ${ESP_COMPONENTS}
