@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  *
@@ -722,6 +722,10 @@ const handshakeProtocol = {
 					break;
 				}
 			}
+
+			if (session.protocolVersion >= 0x303)
+				s.readChunk(s.readChars(2));		// skip signature hash algorithms list in TLS 1.2 and later
+
 			let ttlSize = s.readChars(2);
 			const names = [];
 			while (ttlSize > 0) {
