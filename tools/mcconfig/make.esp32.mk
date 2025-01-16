@@ -74,7 +74,6 @@ else
 				else
 					# basic esp32 doesn't support USB
 					ESP32_TARGET = 1
-					USB_OPTION =
 				endif
 			endif
 		endif
@@ -114,13 +113,13 @@ ifeq ($(MAKEFLAGS_JOBS),)
 	MAKEFLAGS_JOBS = --jobs -l 2.5
 endif
 
-USB_OPTION=
+IDF_BUILD_OPTIONS =
 
 SDKCONFIG_H_DIR = $(BLD_DIR)/config
 
 ifeq ($(USE_USB),0) 
 else
-	USB_OPTION = -DUSE_USB=$(USE_USB)
+	IDF_BUILD_OPTIONS += -DUSE_USB=$(USE_USB)
 endif
 
 DRIVER_DIRS_OLD = \
@@ -333,9 +332,11 @@ C_DEFINES = \
 	-DkCommodettoBitmapFormat=$(COMMODETTOBITMAPFORMAT) \
 	-DkPocoRotation=$(POCOROTATION)
 ifeq ($(DEBUG),1)
+	IDF_BUILD_OPTIONS += -DmxDebug=1
 	C_DEFINES += -DmxDebug=1
 endif
 ifeq ($(INSTRUMENT),1)
+	IDF_BUILD_OPTIONS += -DINSTRUMENT=1
 	C_DEFINES += -DMODINSTRUMENTATION=1 -DmxInstrument=1
 endif
 C_INCLUDES += $(DIRECTORIES)
@@ -406,15 +407,21 @@ PROJ_DIR_FILES = \
 	$(PROJ_DIR)/partitions.csv \
 	$(PROJ_DIR)/Makefile
 
-ifeq ($(USE_USB),1) 
-	PROJ_DIR_FILES += $(PROJ_DIR)/main/debugger_tinyusb.c
+ifeq ("$(DEBUGGER)$(INSTRUMENT)","")
+	DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_none.c
 else
-	ifeq ($(USE_USB),2)
-		PROJ_DIR_FILES += $(PROJ_DIR)/main/debugger_cdc.c
+	ifeq ($(USE_USB),1) 
+		DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_tinyusb.c
 	else
-		PROJ_DIR_FILES += $(PROJ_DIR)/main/debugger_uart.c
+		ifeq ($(USE_USB),2)
+			DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_cdc.c
+		else
+			DEBUGGER_SRC_FILE = $(PROJ_DIR)/main/debugger_uart.c
+		endif
 	endif
 endif
+
+PROJ_DIR_FILES += $(DEBUGGER_SRC_FILE)
 
 ifneq ($(BOOTLOADERPATH),)
 	PROJ_DIR_FILES += $(PROJ_DIR)/components/bootloader/subproject/main/bootloader_start.c
@@ -446,7 +453,7 @@ KILL_SERIAL2XSBUG = $(shell pkill serial2xsbug)
 BUILD_CMD = idf.py $(IDF_PY_LOG_FLAG) build -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D ESP32=$(ESP32_TARGET) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)"
 BUILD_ERR = "ESP-IDF Build Failed"
 DEPLOY_CMD = idf.py -p `$(PLATFORM_DIR)/config/idfSerialPort` -b $(UPLOAD_SPEED) $(IDF_PY_LOG_FLAG) flash -D mxDebug=$(DEBUG) -D INSTRUMENT=$(INSTRUMENT) -D TMP_DIR=$(TMP_DIR) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED)
-IDF_RECONFIGURE_CMD = idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(USB_OPTION)
+IDF_RECONFIGURE_CMD = idf.py $(IDF_PY_LOG_FLAG) reconfigure -D SDKCONFIG_DEFAULTS=$(SDKCONFIG_FILE) -D SDKCONFIG_HEADER="$(SDKCONFIG_H)" -D CMAKE_MESSAGE_LOG_LEVEL=$(CMAKE_LOG_LEVEL) -D DEBUGGER_SPEED=$(DEBUGGER_SPEED) -D IDF_TARGET=$(ESP32_SUBCLASS) -D ESP32_SUBCLASS=$(ESP32_SUBCLASS) $(IDF_BUILD_OPTIONS)
 RELEASE_LAUNCH_CMD = idf.py $(PORT_SET) $(IDF_PY_LOG_FLAG) monitor
 PARTITIONS_BIN = partition-table.bin
 PARTITIONS_PATH = $(BLD_DIR)/partition_table/$(PARTITIONS_BIN)
@@ -677,6 +684,9 @@ $(PROJ_DIR)/main:
 
 $(PROJ_DIR)/main/main.c: $(PROJ_DIR)/main $(PROJ_DIR_TEMPLATE)/main/main.c
 	cp -f $(PROJ_DIR_TEMPLATE)/main/main.c $@
+
+$(PROJ_DIR)/main/debugger_none.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_none.c
+	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_none.c $@
 
 $(PROJ_DIR)/main/debugger_uart.c: $(PROJ_DIR)/main $(PLATFORM_DIR)/lib/debugger/debugger_uart.c
 	cp -f $(PLATFORM_DIR)/lib/debugger/debugger_uart.c $@

@@ -31,15 +31,12 @@
 #include "driver/uart.h"
 
 #include "modInstrumentation.h"
-#include "esp_system.h"		// to get system_get_free_heap_size, etc.
 
 #include "xs.h"
 #include "xsHost.h"
 #include "xsHosts.h"
 
 #include "mc.defines.h"
-
-#if mxDebug || mxInstrument
 
 #if MODDEF_ECMA419_ENABLED
 	#include "common/builtinCommon.h"
@@ -213,15 +210,3 @@ void setupDebugger(xsMachine *the)
 	builtinUsePin(USE_UART_RX);
 #endif
 }
-
-#else /* mxDebug || mxInstrument */
-
-void setupDebugger(xsMachine *the) { (void)the; }
-void modLog_transmit(const char *msg) { (void)msg; }
-void ESP_put(uint8_t *c, int count) { (void)c, (void)count; }
-void ESP_putc(int c) { (void)c; }
-int ESP_getc(void) { return -1; }
-uint8_t ESP_isReadable() { return 0; }
-uint8_t ESP_setBaud(int baud) { return -1; }
-
-#endif

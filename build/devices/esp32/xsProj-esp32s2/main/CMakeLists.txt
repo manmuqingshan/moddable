@@ -25,7 +25,7 @@ file(TO_CMAKE_PATH "${TMP_DIR}" C_TMP_DIR)
 
 idf_component_register(
 			SRCS "main.c"
-			INCLUDE_DIRS "." ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${ENV_MODDABLE}/modules/io ${C_TMP_DIR}
+			INCLUDE_DIRS "." ${ENV_MODDABLE}/xs/platforms/esp  ${ENV_MODDABLE}/xs/platforms/mc ${ENV_MODDABLE}/xs/includes ${ENV_MODDABLE}/modules/base/instrumentation ${ENV_MODDABLE}/modules/base/timer ${ENV_MODDABLE}/modules/io ${C_TMP_DIR}
 			)
 
 if (mxDebug EQUAL "1")
@@ -35,13 +35,17 @@ if (DEBUGGER_SPEED)
     target_compile_options(${COMPONENT_TARGET} PRIVATE -DDEBUGGER_SPEED=${DEBUGGER_SPEED})
 endif()
 if (INSTRUMENT EQUAL "1")
-    target_compile_options(${COMPONENT_TARGET} PRIVATE -DMODINSTRUMENTATION=1)
+    target_compile_options(${COMPONENT_TARGET} PRIVATE -DMODINSTRUMENTATION=1 -DmxInstrument=1)
 endif()
 
-if (USE_USB EQUAL "1")
-	target_sources(${COMPONENT_TARGET} PRIVATE debugger_tinyusb.c)
+if (INSTRUMENT EQUAL "1" OR mxDebug EQUAL "1")
+	if (USE_USB EQUAL "1")
+		target_sources(${COMPONENT_TARGET} PRIVATE debugger_tinyusb.c)
+	else()
+		target_sources(${COMPONENT_TARGET} PRIVATE debugger_uart.c)
+	endif()
 else()
-	target_sources(${COMPONENT_TARGET} PRIVATE debugger_uart.c)
+	target_sources(${COMPONENT_TARGET} PRIVATE debugger_none.c)
 endif()
 
 target_compile_options(${COMPONENT_TARGET} PRIVATE -DUSE_USB=${USE_USB})
