@@ -87,7 +87,11 @@
 	#include <unistd.h>
 	typedef int txSocket;
 	#define mxNoSocket -1
-	#define mxUseFloat16 1
+#if mxLinux
+	#if GNUC > 11
+		#define mxUseFloat16 1
+	#endif
+#endif
 	#define mxUseGCCAtomics 1
 	#define mxUsePOSIXThreads 1
 #endif
