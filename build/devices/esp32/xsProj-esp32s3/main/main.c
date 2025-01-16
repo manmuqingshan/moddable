@@ -26,12 +26,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
 #include "esp_task_wdt.h"
-#include "lwip/inet.h"
-#include "lwip/ip4_addr.h"
-#include "lwip/dns.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
@@ -48,10 +43,6 @@
 #include "xsHosts.h"
 
 #include "mc.defines.h"
-
-#if MODDEF_ECMA419_ENABLED
-	#include "common/builtinCommon.h"
-#endif
 
 extern void mc_setup(xsMachine *the);
 extern void	setupDebugger();

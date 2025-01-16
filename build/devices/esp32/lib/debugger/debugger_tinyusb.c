@@ -27,9 +27,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
-#include "esp_log.h"
-
-#include "modInstrumentation.h"
 
 #include "xs.h"
 #include "xsHost.h"
@@ -49,7 +46,9 @@
 
 extern void fx_putc(void *refcon, char c);		//@@
 
-static xsMachine *gThe;		// this is copied in from main
+#ifdef mxDebug
+	static xsMachine *gThe;		// this is copied in from main
+#endif
 
 /*
 	xsbug IP address
@@ -121,7 +120,7 @@ int fifo_get(fifo_t *fifo, uint8_t *c) {
 int fifo_put(fifo_t *fifo, uint8_t c) {
 	if (0 == (fifo->size_mask - F_length(fifo) + 1))
 {
-printf("fifo_put failed\r\n");
+// printf("fifo_put failed\r\n");
 		return -1;
 }
 	F_put(fifo, c);
@@ -134,7 +133,7 @@ int fifo_init(fifo_t *fifo, uint8_t *buf, uint32_t size) {
 
 	if (! ((0 != size) && (0 == ((size - 1) & size))))
 {
-printf("fifo_init - bad size: %ld\r\n", size);
+// printf("fifo_init - bad size: %ld\r\n", size);
 		return -2;		// bad size - needs to be base 2
 }
 
@@ -209,7 +208,7 @@ void checkLineState() {
 void line_state_callback(int itf, cdcacm_event_t *event) {
 	DTR = event->line_state_changed_data.dtr;
 	RTS = event->line_state_changed_data.rts;
-	printf("[%ld] dtr: %d, rts: %d\r\n", modMilliseconds(), DTR, RTS);
+	// printf("[%ld] dtr: %d, rts: %d\r\n", modMilliseconds(), DTR, RTS);
 	checkLineState();
 }
 
@@ -243,7 +242,7 @@ void ESP_put(uint8_t *c, int count) {
 		uint32_t amt = count > CONFIG_TINYUSB_CDC_RX_BUFSIZE ? CONFIG_TINYUSB_CDC_RX_BUFSIZE : count;
 		tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_0, c, amt);
 		if (ESP_ERR_TIMEOUT == tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_0, 50)) {
-			printf("write_flush timeout\n");
+			// printf("write_flush timeout\n");
 		}
 		c += amt;
 		count -= amt;
@@ -268,8 +267,6 @@ uint8_t ESP_setBaud(int baud) {
 }
 
 void setupDebugger(xsMachine *the) {
-	gThe = the;
-
 	tinyusb_config_t tusb_cfg = {};
 	ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 	tinyusb_config_cdcacm_t acm_cfg = {
@@ -286,6 +283,7 @@ void setupDebugger(xsMachine *the) {
 	fifo_init(&rx_fifo, rx_fifo_buffer, 1024);
 
 #if mxDebug
+	gThe = the;
 	usbDbgQueue = xQueueCreate(8, sizeof(uint32_t));
 	xTaskCreate(debug_task, "debug", 2048, usbDbgQueue, 8, NULL);
 #endif
@@ -295,7 +293,7 @@ void setupDebugger(xsMachine *the) {
 	uint32_t count;
 	for (count = 0; count < 100; count++) {
 		if (tud_cdc_connected()) {
-			printf("USB CONNECTED!\r\n");
+			// printf("USB CONNECTED!\r\n");
 			break;
 		}
 		modDelayMilliseconds(50);	// give USB time to come up

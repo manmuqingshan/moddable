@@ -30,21 +30,14 @@
 
 #include "driver/usb_serial_jtag.h"
 
-#include "modInstrumentation.h"
-
 #include "xs.h"
 #include "xsHost.h"
 #include "xsHosts.h"
 
 #include "mc.defines.h"
 
-#if MODDEF_ECMA419_ENABLED
-	#include "common/builtinCommon.h"
-#endif
-
 #ifndef XT_STACK_EXTRA
 	#define XT_STACK_EXTRA  512
-	#define XT_STACK_EXTRA_CLIB 1024
 #endif
 
 //#define WEAK __attribute__((weak))
@@ -54,30 +47,29 @@
 	#define DEBUGGER_SPEED 921600
 #endif
 
-static xsMachine *gThe;		// copied in from main
-
-extern void fx_putc(void *refcon, char c);		//@@
-
-/*
-	xsbug IP address
-
-	IP address either:
-		0,0,0,0 - no xsbug connection
-		127,0,0,7 - xsbug over serial
-		w,x,y,z - xsbug over TCP (address of computer running xsbug)
-*/
-
-#define XSDEBUG_NONE 0,0,0,0
-#define XSDEBUG_SERIAL 127,0,0,7
-#ifndef DEBUG_IP
-	#define DEBUG_IP XSDEBUG_SERIAL
-#endif
-
 #ifdef mxDebug
+	static xsMachine *gThe;		// copied in from main
+
+	/*
+		xsbug IP address
+
+		IP address either:
+			0,0,0,0 - no xsbug connection
+			127,0,0,7 - xsbug over serial
+			w,x,y,z - xsbug over TCP (address of computer running xsbug)
+	*/
+
+	#define XSDEBUG_NONE 0,0,0,0
+	#define XSDEBUG_SERIAL 127,0,0,7
+	#ifndef DEBUG_IP
+		#define DEBUG_IP XSDEBUG_SERIAL
+	#endif
+
 	WEAK unsigned char gXSBUG[4] = {DEBUG_IP};
 #endif
 
-#ifdef mxDebug
+extern void fx_putc(void *refcon, char c);		//@@
+
 uint8_t jtagReady = 1;
 uint8_t jtag0_position = 0, jtag0_available = 0;
 uint8_t jtag1_position = 0, jtag1_available = 0;
@@ -90,7 +82,6 @@ static void debug_task(void *pvParameter)
 	usb_serial_jtag_driver_install(&cfg);
 
 	while (true) {
-
 		if (0 == jtagReady) {
 			int amt = usb_serial_jtag_read_bytes(jtag1, sizeof(jtag1), 1);
 			if (0 == amt)
@@ -106,10 +97,11 @@ static void debug_task(void *pvParameter)
 			jtag0_available = (uint8_t)amt;  
 		}
 
+#ifdef mxDebug
 		fxReceiveLoop();
+#endif
 	}
 }
-#endif
 
 /*
 	Required functions provided by application
@@ -153,7 +145,6 @@ WEAK void ESP_putc(int c) {
 }
 
 WEAK int ESP_getc(void) {
-#ifdef mxDebug
 	if (0 == jtagReady) {
 		if (jtag0_available) {
 			jtag0_available--;
@@ -176,16 +167,12 @@ WEAK int ESP_getc(void) {
 			return jtag0[jtag0_position++];
 		}
 	}
-#endif /* xDebug */
+
 	return -1;
 }
 
 WEAK uint8_t ESP_isReadable() {
-#ifdef mxDebug
 	return jtag0_available || jtag1_available;
-#else
-	return 0;
-#endif
 }
 
 WEAK uint8_t ESP_setBaud(int baud) {
@@ -193,11 +180,9 @@ WEAK uint8_t ESP_setBaud(int baud) {
 }
 
 void setupDebugger(xsMachine *the) {
-	gThe = the;
-
 #ifdef mxDebug
-    xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), 0, 8, NULL);
-    printf("USB CONNECTED\r\n");
+	gThe = the;
 #endif
-}
 
+    xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), 0, 8, NULL);
+}

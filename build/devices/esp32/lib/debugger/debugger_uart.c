@@ -30,8 +30,6 @@
 
 #include "driver/uart.h"
 
-#include "modInstrumentation.h"
-
 #include "xs.h"
 #include "xsHost.h"
 #include "xsHosts.h"
@@ -83,7 +81,9 @@ extern void mc_setup(xsMachine *the);
 	#define UART_HW_FIFO_LEN(USE_UART) UART_FIFO_LEN
 #endif
 
-static xsMachine *gThe;		// copied in from main
+#ifdef mxDebug
+	static xsMachine *gThe;		// copied in from main
+#endif
 
 /*
 	xsbug IP address
@@ -101,7 +101,7 @@ static xsMachine *gThe;		// copied in from main
 #endif
 
 #ifdef mxDebug
-	WEAK unsigned char gXSBUG[4] = {DEBUG_IP};
+WEAK unsigned char gXSBUG[4] = {DEBUG_IP};
 
 static void debug_task(void *pvParameter)
 {
@@ -171,10 +171,8 @@ WEAK uint8_t ESP_setBaud(int baud) {
 
 void setupDebugger(xsMachine *the)
 {
-	esp_err_t err;
 	uart_config_t uartConfig = {0};
 
-	gThe = the;
 #ifdef mxDebug
 	uartConfig.baud_rate = DEBUGGER_SPEED;
 #else
@@ -188,18 +186,15 @@ void setupDebugger(xsMachine *the)
 	uartConfig.source_clk = UART_SCLK_DEFAULT;
 
 #ifdef mxDebug
+	gThe = the;
 	QueueHandle_t uartQueue;
 	uart_driver_install(USE_UART, UART_HW_FIFO_LEN(USE_UART) * 2, 0, 8, &uartQueue, 0);
 #else
 	uart_driver_install(USE_UART, UART_HW_FIFO_LEN(USE_UART) * 2, 0, 0, NULL, 0);
 #endif
 
-	err = uart_param_config(USE_UART, &uartConfig);
-	if (err)
-		printf("uart_param_config err %d\r\n", err);
-	err = uart_set_pin(USE_UART, USE_UART_TX, USE_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-	if (err)
-		printf("uart_set_pin err %d\r\n", err);
+	uart_param_config(USE_UART, &uartConfig);
+	uart_set_pin(USE_UART, USE_UART_TX, USE_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
 #ifdef mxDebug
 	xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), uartQueue, 8, NULL);
