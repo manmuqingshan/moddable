@@ -248,7 +248,7 @@ uint8_t ESP_setBaud(int baud) {
 	return 0;
 }
 
-void setupDebugger() {
+void setupDebugger(void) {
 	tinyusb_config_t tusb_cfg = {};
 	ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 	tinyusb_config_cdcacm_t acm_cfg = {
