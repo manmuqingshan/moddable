@@ -98,7 +98,6 @@ static void debug_task(void *pvParameter)
 			fxReceiveLoop();
 	}
 }
-#endif
 
 /*
 	Required functions provided by application
