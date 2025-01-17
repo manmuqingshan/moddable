@@ -69,7 +69,29 @@ extern void	setupDebugger();
 	uint8_t gSoftReset;
 #endif
 
-static xsMachine *gThe;		// the main XS virtual machine running
+xsMachine *gThe;		// the main XS virtual machine running
+
+#ifdef mxDebug
+	// #define WEAK __attribute__((weak))
+	#define WEAK
+
+	/*
+		xsbug IP address
+
+		IP address either:
+			0,0,0,0 - no xsbug connection
+			127,0,0,7 - xsbug over serial
+			w,x,y,z - xsbug over TCP (address of computer running xsbug)
+	*/
+
+	#define XSDEBUG_NONE 0,0,0,0
+	#define XSDEBUG_SERIAL 127,0,0,7
+	#ifndef DEBUG_IP
+		#define DEBUG_IP XSDEBUG_SERIAL
+	#endif
+
+	WEAK unsigned char gXSBUG[4] = {DEBUG_IP};
+#endif
 
 void loop_task(void *pvParameter)
 {
@@ -119,7 +141,7 @@ void app_main() {
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 #endif
 
-	setupDebugger(gThe);
+	setupDebugger();
 
 	xTaskCreate(loop_task, "main", kStack, NULL, 4, NULL);
 }
