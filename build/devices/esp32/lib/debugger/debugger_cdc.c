@@ -89,28 +89,25 @@ static void debug_task(void *pvParameter)
 
 WEAK void modLog_transmit(const char *msg)
 {
-	uint8_t c;
-
 #ifdef mxDebug
 	if (gThe) {
-		while (0 != (c = c_read8(msg++)))
+		uint8_t c;
+		while (0 != (c = *msg++))
 			fx_putc(gThe, c);
 		fx_putc(gThe, 0);
 	}
 	else
 #endif
 	{
-		while (0 != (c = c_read8(msg++)))
-			ESP_putc(c);
-		ESP_putc(13);
-		ESP_putc(10);
+		const uint8_t crlf[] = {13, 10};
+		ESP_put((uint8_t *)msg, strlen(msg));
+		ESP_put((uint8_t *)crlf, 2);
 	}
 }
 
 WEAK void ESP_put(uint8_t *c, int count) {
-	int sent = 0;
 	while (count > 0) {
-		sent = usb_serial_jtag_write_bytes(c, count, 10);
+		int sent = usb_serial_jtag_write_bytes(c, count, 10);
 		if (sent <= 0)
 			break;
 		c += sent;
