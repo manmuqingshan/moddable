@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2023  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -221,9 +221,6 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 			xsmcGet(xsVar(0), xsArg(1), xsID_keyCount);
 			keyCount = xsmcToInteger(xsVar(0));
 
-			if (allocation)
-				worker->creation.staticSize = allocation;
-
 			if (stackCount)
 				worker->creation.stackCount = stackCount;
 
@@ -232,6 +229,19 @@ static void workerConstructor(xsMachine *the, xsBooleanValue shared)
 			
 			if (keyCount)
 				worker->creation.initialKeyCount = keyCount;
+
+			if (allocation) {
+				worker->creation.staticSize = allocation;
+				int available = worker->creation.staticSize - (worker->creation.stackCount * sizeof(xsSlot)) - 1024; 
+				if (worker->creation.initialChunkSize > (available / 2)) {
+					worker->creation.initialChunkSize = 512;
+					worker->creation.incrementalChunkSize = 512;
+				}
+				if (worker->creation.initialHeapCount > (available / (2 * sizeof(xsSlot))))
+					worker->creation.initialHeapCount = available / (2 * sizeof(xsSlot));
+				if (worker->creation.incrementalHeapCount > (worker->creation.initialHeapCount / 8) || !worker->creation.incrementalHeapCount)
+					worker->creation.incrementalHeapCount = 8;
+			}
 		}
 		else {
 			getIntegerProperty(the, &xsArg(1), xsID_static, &worker->creation.staticSize);
@@ -522,7 +532,6 @@ void workerLoop(void *pvParameter)
 			vTaskDelay(1000);
 	}
 	modMachineTaskWake(worker->parent);
-
 
 	while (true) {
 		modTimersExecute();
