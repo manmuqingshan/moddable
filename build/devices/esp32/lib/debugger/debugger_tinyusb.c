@@ -47,25 +47,7 @@
 extern void fx_putc(void *refcon, char c);		//@@
 
 #ifdef mxDebug
-	static xsMachine *gThe;		// this is copied in from main
-#endif
-
-/*
-	xsbug IP address
-
-	IP address either:
-		0,0,0,0 - no xsbug connection
-		127,0,0,7 - xsbug over serial
-		w,x,y,z - xsbug over TCP (address of computer running xsbug)
-*/
-
-#define XSDEBUG_SERIAL 127,0,0,7
-#ifndef DEBUG_IP
-	#define DEBUG_IP XSDEBUG_SERIAL
-#endif
-
-#ifdef mxDebug
-	WEAK unsigned char gXSBUG[4] = {DEBUG_IP};
+	extern xsMachine *gThe;		// this is copied in from main
 #endif
 
 typedef struct {
@@ -266,7 +248,7 @@ uint8_t ESP_setBaud(int baud) {
 	return 0;
 }
 
-void setupDebugger(xsMachine *the) {
+void setupDebugger() {
 	tinyusb_config_t tusb_cfg = {};
 	ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 	tinyusb_config_cdcacm_t acm_cfg = {
@@ -283,7 +265,6 @@ void setupDebugger(xsMachine *the) {
 	fifo_init(&rx_fifo, rx_fifo_buffer, 1024);
 
 #if mxDebug
-	gThe = the;
 	usbDbgQueue = xQueueCreate(8, sizeof(uint32_t));
 	xTaskCreate(debug_task, "debug", 2048, usbDbgQueue, 8, NULL);
 #endif

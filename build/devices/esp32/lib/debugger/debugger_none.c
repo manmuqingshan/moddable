@@ -24,7 +24,7 @@
 #include "xsHost.h"
 #include "xsHosts.h"
 
-void setupDebugger(void *the) { (void)the; }
+void setupDebugger(void) { }
 void modLog_transmit(const char *msg) { (void)msg; }
 void ESP_put(uint8_t *c, int count) { (void)c, (void)count; }
 void ESP_putc(int c) { (void)c; }

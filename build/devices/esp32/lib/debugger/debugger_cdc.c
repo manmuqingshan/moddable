@@ -43,29 +43,8 @@
 //#define WEAK __attribute__((weak))
 #define WEAK
 
-#ifndef DEBUGGER_SPEED
-	#define DEBUGGER_SPEED 921600
-#endif
-
 #ifdef mxDebug
-	static xsMachine *gThe;		// copied in from main
-
-	/*
-		xsbug IP address
-
-		IP address either:
-			0,0,0,0 - no xsbug connection
-			127,0,0,7 - xsbug over serial
-			w,x,y,z - xsbug over TCP (address of computer running xsbug)
-	*/
-
-	#define XSDEBUG_NONE 0,0,0,0
-	#define XSDEBUG_SERIAL 127,0,0,7
-	#ifndef DEBUG_IP
-		#define DEBUG_IP XSDEBUG_SERIAL
-	#endif
-
-	WEAK unsigned char gXSBUG[4] = {DEBUG_IP};
+	extern xsMachine *gThe;
 #endif
 
 extern void fx_putc(void *refcon, char c);		//@@
@@ -179,10 +158,6 @@ WEAK uint8_t ESP_setBaud(int baud) {
 	return 1;
 }
 
-void setupDebugger(xsMachine *the) {
-#ifdef mxDebug
-	gThe = the;
-#endif
-
+void setupDebugger(void) {
     xTaskCreate(debug_task, "debug", (768 + XT_STACK_EXTRA) / sizeof(StackType_t), 0, 8, NULL);
 }

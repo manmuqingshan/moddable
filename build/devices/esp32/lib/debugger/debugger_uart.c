@@ -82,26 +82,8 @@ extern void mc_setup(xsMachine *the);
 #endif
 
 #ifdef mxDebug
-	static xsMachine *gThe;		// copied in from main
+	extern xsMachine *gThe;		// copied in from main
 #endif
-
-/*
-	xsbug IP address
-
-	IP address either:
-		0,0,0,0 - no xsbug connection
-		127,0,0,7 - xsbug over serial
-		w,x,y,z - xsbug over TCP (address of computer running xsbug)
-*/
-
-#define XSDEBUG_NONE 0,0,0,0
-#define XSDEBUG_SERIAL 127,0,0,7
-#ifndef DEBUG_IP
-	#define DEBUG_IP XSDEBUG_SERIAL
-#endif
-
-#ifdef mxDebug
-WEAK unsigned char gXSBUG[4] = {DEBUG_IP};
 
 static void debug_task(void *pvParameter)
 {
@@ -169,7 +151,7 @@ WEAK uint8_t ESP_setBaud(int baud) {
 	return ESP_OK == uart_set_baudrate(USE_UART, baud);
 }
 
-void setupDebugger(xsMachine *the)
+void setupDebugger(void)
 {
 	uart_config_t uartConfig = {0};
 
@@ -186,7 +168,6 @@ void setupDebugger(xsMachine *the)
 	uartConfig.source_clk = UART_SCLK_DEFAULT;
 
 #ifdef mxDebug
-	gThe = the;
 	QueueHandle_t uartQueue;
 	uart_driver_install(USE_UART, UART_HW_FIFO_LEN(USE_UART) * 2, 0, 8, &uartQueue, 0);
 #else
