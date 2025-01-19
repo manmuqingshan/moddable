@@ -21,8 +21,8 @@
 		"$(MODDABLE)/modules/io/flash/manifest.json",
 		"$(MODDABLE)/modules/files/storage/manifest.json",
 		"$(MODDABLE)/modules/io/audioout/manifest.json",
-		"$(MODDABLEPROJECTS)/modules/io/update/manifest.json",
-		"$(MODDABLEPROJECTS)/modules/io/flash/manifest.json"
+		"$(MODDABLE)/modules/io/update/manifest.json",
+		"$(MODDABLE)/modules/io/flash/manifest.json"
 	],
 	"modules": {
 		"*": [
