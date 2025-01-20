@@ -91,6 +91,8 @@
 	#if GNUC > 11
 		#define mxUseFloat16 1
 	#endif
+#else
+	#define mxUseFloat16 1
 #endif
 	#define mxUseGCCAtomics 1
 	#define mxUsePOSIXThreads 1
