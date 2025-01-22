@@ -278,8 +278,11 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 		break;
 		
 	case XS_REFERENCE_KIND:
-		theResult->kind = theSlot->kind;
-		fxDemarshallReference(the, theSlot->value.reference, &theResult->value.reference, theSymbolMap, alien);
+		theResult->value.error.info = C_NULL;
+		theResult->kind = XS_ERROR_KIND;
+		fxDemarshallReference(the, theSlot->value.reference, &(theResult->value.error.info), theSymbolMap, alien);
+		theResult->value.reference = theResult->value.error.info;
+		theResult->kind = XS_REFERENCE_KIND;
 		break;
 	case XS_INSTANCE_KIND:
 		theSlot->value.instance.garbage = theResult;
@@ -335,8 +338,8 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 					txSlot* value = key->next;
 					txU4 sum = fxSumEntry(the, key);
 					txU4 modulo = sum % aSlot->value.table.length;
-					txSlot** address = &(aSlot->value.table.address[modulo]);
 					txSlot* entry = fxNewSlot(the);
+					txSlot** address = &(aSlot->value.table.address[modulo]);
 					entry->next = *address;
 					entry->kind = XS_ENTRY_KIND;
 					entry->value.entry.slot = key;
@@ -350,8 +353,8 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 				while (key) {
 					txU4 sum = fxSumEntry(the, key);
 					txU4 modulo = sum % aSlot->value.table.length;
-					txSlot** address = &(aSlot->value.table.address[modulo]);
 					txSlot* entry = fxNewSlot(the);
+					txSlot** address = &(aSlot->value.table.address[modulo]);
 					entry->next = *address;
 					entry->kind = XS_ENTRY_KIND;
 					entry->value.entry.slot = key;
@@ -371,14 +374,17 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 			theResult->value.array.address = (txSlot *)fxNewChunk(the, aLength * sizeof(txSlot));
 			c_memset(theResult->value.array.address, 0, aLength * sizeof(txSlot));
 			aSlot = theSlot->value.array.address;
-			aResult = theResult->value.array.address;
 			index = 0;
 			while (aLength) {
-				fxDemarshallSlot(the, aSlot, aResult, theSymbolMap, alien);
+				mxPushUndefined();
+				fxDemarshallSlot(the, aSlot, the->stack, theSymbolMap, alien);
+				aResult = theResult->value.array.address + index;
+				aResult->value = the->stack->value;
+				aResult->kind = the->stack->kind;
+				mxPop();
+				*((txIndex*)aResult) = index;
 				aLength--;
 				aSlot = aSlot->next;
-				*((txIndex*)aResult) = index;
-				aResult++;
 				index++;
 			}
 		}
@@ -404,6 +410,9 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 		break;	
 
 	case XS_LIST_KIND:
+		theResult->value.list.first = C_NULL;
+		theResult->value.list.last = C_NULL;
+		theResult->kind = theSlot->kind;
 		aSlot = theSlot->value.list.first;
 		aSlotAddress = &(theResult->value.list.first);
 		while (aSlot) {
@@ -412,9 +421,11 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 			aSlot = aSlot->next;
 			aSlotAddress = &((*aSlotAddress)->next);
 		}
-		theResult->kind = theSlot->kind;
 		break;	
 	case XS_PRIVATE_KIND:
+		theResult->value.private.check = theSlot->value.private.check;
+		theResult->value.private.first = C_NULL;
+		theResult->kind = theSlot->kind;
 		aSlot = theSlot->value.private.first;
 		aSlotAddress = &(theResult->value.private.first);
 		while (aSlot) {
@@ -423,8 +434,6 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 			aSlot = aSlot->next;
 			aSlotAddress = &((*aSlotAddress)->next);
 		}
-		theResult->value.private.check = theSlot->value.private.check;
-		theResult->kind = theSlot->kind;
 		break;	
 	default:
 		break;
