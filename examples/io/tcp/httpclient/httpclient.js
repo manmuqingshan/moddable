@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -101,7 +101,7 @@ class HTTPClient {
 			const byteLength = data.byteLength;
 			if (true === client.#requestBody) {
 				if ((byteLength + 8) > client.#writable)
-					throw new Error("too much");
+					throw new Error("would block");
 
 				client.#write(ArrayBuffer.fromString(byteLength.toString(16) + "\r\n"), more);
 				client.#write(data, more);
@@ -111,7 +111,7 @@ class HTTPClient {
 			}
 			else {
 				if ((byteLength > client.#writable) || (byteLength > client.#requestBody))
-					throw new Error("too much");
+					throw new Error("would block");
 
 				client.#write(data);
 
