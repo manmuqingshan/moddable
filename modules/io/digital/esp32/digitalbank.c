@@ -18,15 +18,6 @@
  *
  */
 
-/*
-	DigitalBank - uing ESP8266 hardware registers and ESP32 hybrid of ESP-IDF and hardware registers
-
-	To do:
-
-		ESP8266 implementation assumes a single VM
-
-*/
-
 #include "xsmc.h"			// xs bindings for microcontroller
 #include "xsHost.h"			// esp platform support
 #include "mc.xs.h"			// for xsID_* values
@@ -36,7 +27,6 @@
 
 #include "driver/gpio.h"
 
-//#include "soc/gpio_caps.h"
 #include "soc/gpio_periph.h"
 #include "hal/gpio_hal.h"
 
@@ -55,18 +45,20 @@ enum {
 
 struct DigitalRecord {
 	uint32_t	pins;
-	xsSlot		obj;
-	uint8_t		bank;
-	uint8_t		hasOnReadable;
-	uint8_t		isInput;
-	uint8_t		useCount;
+	xsSlot						obj;
+	uint8_t						bank;
+	uint8_t						hasOnReadable;
+	uint8_t						isInput;
+	uint8_t						useCount;
 	// fields after here only allocated if onReadable callback present
-	uint32_t	triggered;
-	uint32_t	rises;
-	uint32_t	falls;
+	uint32_t					triggered;
+	uint32_t					rises;
+	uint32_t					falls;
 
-	xsMachine	*the;
-	xsSlot		*onReadable;
+	xsMachine					*the;
+	xsSlot						*onReadable;
+	modDigitalBankOnReadable	onReadableFunc;
+	void						*onReadableRefcon;
 	struct DigitalRecord *next;
 };
 typedef struct DigitalRecord DigitalRecord;
@@ -79,6 +71,7 @@ static void xs_digitalbank_mark(xsMachine* the, void* it, xsMarkRoot markRoot);
 static void *modDigitalBankValidate(xsMachine *the, xsSlot *instance);
 static uint32_t modDigitalBankRead(void *instanceData);
 static void modDigitalBankWrite(void *instanceData, uint32_t value);
+static uint8_t modDigitalBankSetOnReadable(void *instanceData, modDigitalBankOnReadable func, void *refcon);
 
 static Digital gDigitals;	// pins with onReadable callbacks
 
@@ -90,7 +83,8 @@ static const xsDigitalBankHostHooksRecord ICACHE_RODATA_ATTR xsDigitalBankHooks 
 	},
 	.doValidate = modDigitalBankValidate,
 	.doRead = modDigitalBankRead,
-	.doWrite = modDigitalBankWrite
+	.doWrite = modDigitalBankWrite,
+	.doSetOnReadable = modDigitalBankSetOnReadable,
 };
 
 void xs_digitalbank_constructor(xsMachine *the)
@@ -216,6 +210,7 @@ void xs_digitalbank_constructor(xsMachine *the)
 		digital->triggered = 0;
 // exception for rise/fall on pin 16
 		digital->onReadable = onReadable;
+		digital->onReadableFunc = C_NULL;
 
 		if (NULL == gDigitals)
 			gpio_install_isr_service(0);
@@ -350,6 +345,9 @@ void IRAM_ATTR digitalISR(void *refcon)
 		if ((bank != walker->bank) || !(pin & walker->pins))
 			continue;
 
+		if (walker->hasOnReadable && walker->onReadableFunc && (walker->onReadableFunc)(walker->onReadableRefcon))
+			break;
+
 		uint32_t triggered = walker->triggered;
 		walker->triggered |= pin;
 		if (!triggered) {
@@ -447,4 +445,17 @@ void modDigitalBankWrite(void *instanceData, uint32_t value)
 #endif
 	}
 #endif
+}
+
+uint8_t modDigitalBankSetOnReadable(void *instanceData, modDigitalBankOnReadable func, void *refcon)
+{
+	Digital digital = instanceData;
+
+	if (!digital->hasOnReadable)
+		return 0;
+
+	digital->onReadableFunc = func;
+	digital->onReadableRefcon = refcon;
+
+	return 1;
 }

@@ -20,15 +20,19 @@
 
 #include "xs.h"
 
+typedef uint8_t (*modDigitalBankOnReadable)(void *refcon);		// return 1 to supress trigger notification to script, 0 to trigger as usual
+
 typedef void  *(*modDigitalBankValidateFunc)(xsMachine *the, xsSlot *instance);
 typedef uint32_t (*modDigitalBankReadFunc)(void *hostData);
 typedef void (*modDigitalBankWriteFunc)(void *hostData, uint32_t value);
+typedef uint8_t (*modDigitalBankSetOnReadableFunc)(void *hostData, modDigitalBankOnReadable func, void *refcon);
 
 struct xsDigitalBankHostHooksRecord {
 	xsHostHooks						hooks;
 	modDigitalBankValidateFunc		doValidate;
 	modDigitalBankReadFunc 			doRead;
 	modDigitalBankWriteFunc 		doWrite;
+	modDigitalBankSetOnReadableFunc	doSetOnReadable;
 };
 
 typedef struct xsDigitalBankHostHooksRecord xsDigitalBankHostHooksRecord;
