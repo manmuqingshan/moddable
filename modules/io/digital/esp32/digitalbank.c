@@ -345,7 +345,7 @@ void IRAM_ATTR digitalISR(void *refcon)
 		if ((bank != walker->bank) || !(pin & walker->pins))
 			continue;
 
-		if (walker->hasOnReadable && walker->onReadableFunc && (walker->onReadableFunc)(walker->onReadableRefcon))
+		if (walker->onReadableFunc && (walker->onReadableFunc)(walker->onReadableRefcon))		// all entries in this list have hasOnReadable true
 			break;
 
 		uint32_t triggered = walker->triggered;
