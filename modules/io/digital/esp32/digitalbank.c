@@ -44,7 +44,7 @@ enum {
 };
 
 struct DigitalRecord {
-	uint32_t	pins;
+	uint32_t					pins;
 	xsSlot						obj;
 	uint8_t						bank;
 	uint8_t						hasOnReadable;
@@ -52,8 +52,6 @@ struct DigitalRecord {
 	uint8_t						useCount;
 	// fields after here only allocated if onReadable callback present
 	uint32_t					triggered;
-	uint32_t					rises;
-	uint32_t					falls;
 
 	xsMachine					*the;
 	xsSlot						*onReadable;
@@ -205,8 +203,6 @@ void xs_digitalbank_constructor(xsMachine *the)
 		xsSlot tmp;
 
 		digital->the = the;
-		digital->rises = rises;
-		digital->falls = falls;
 		digital->triggered = 0;
 // exception for rise/fall on pin 16
 		digital->onReadable = onReadable;
