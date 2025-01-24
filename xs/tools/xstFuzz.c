@@ -725,8 +725,8 @@ void fx_fuzz_gc(xsMachine* the)
 
 void fx_fuzz_doMarshall(xsMachine *the)
 {
-	char *message = xsMarshall(xsArg(0));
-	xsResult = xsDemarshall(message);
+	char *message = xsMarshallAlien(xsArg(0));
+	xsResult = xsDemarshallAlien(message);
 	c_free(message);
 }
 

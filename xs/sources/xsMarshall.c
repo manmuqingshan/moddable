@@ -145,6 +145,12 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 					mxMarshallAlign(p, aChunk->size);
 				}
 				break;
+			case XS_KEY_KIND:
+				if (aSlot->value.key.string) {
+					aChunk = (txChunk*)p;
+					p += aChunk->size;
+					mxMarshallAlign(p, aChunk->size);
+				}
 			case XS_INSTANCE_KIND:
 				aSlot->value.instance.garbage = C_NULL;
 				break;
@@ -605,6 +611,8 @@ txBoolean fxMarshallSlot(txMachine* the, txSlot* theSlot, txSlot** theSlotAddres
 	txSlot* aSlot;
 	txSlot** aSlotAddress;
 	
+	if ((theSlot->kind == XS_PRIVATE_KIND) && (alien || ~(theSlot->value.private.check->flag & XS_DONT_MARSHALL_FLAG)))
+		return 0;
 	if (!fxMarshallKey(the, theSlot, theBuffer, alien))
 		return 0;
 	aResult = (txSlot*)(theBuffer->current);
