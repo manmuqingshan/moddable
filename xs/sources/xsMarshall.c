@@ -55,6 +55,8 @@ struct sxMarshallBuffer {
 	txID symbolCount;
 	txSize symbolSize;
 	txSlot* stack;
+	c_jmp_buf jmp_buf;
+	char error[128];
 };
 
 static void fxDemarshallChunk(txMachine* the, void* theData, void** theDataAddress);
@@ -448,12 +450,13 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 
 void* fxMarshall(txMachine* the, txBoolean alien)
 {
-	txMarshallBuffer aBuffer = { C_NULL, C_NULL, C_NULL, C_NULL, 0, 0, 0 };
+	txMarshallBuffer aBuffer;
 	txSlot* aSlot;
 	txSlot* bSlot;
 	txSlot* cSlot;
 	
-	mxTry(the) {
+	c_memset(&aBuffer, 0, sizeof(aBuffer));
+	if (c_setjmp(aBuffer.jmp_buf) == 0) {
 		size_t mapSize = alien ? the->keyIndex : (the->keyIndex - the->keyOffset);
 		aBuffer.symbolSize = sizeof(txSize) + sizeof(txID);
 		aBuffer.symbolMap = c_calloc(mapSize, sizeof(txID));
@@ -530,7 +533,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		
 		mxCheck(the, aBuffer.current == aBuffer.base + aBuffer.size);
 	}
-	mxCatch(the) {
+	else {
 		aSlot = the->firstHeap;
 		while (aSlot) {
 			bSlot = aSlot + 1;
@@ -545,7 +548,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 			c_free(aBuffer.base);
 		if (aBuffer.symbolMap)
 			c_free(aBuffer.symbolMap);
-		fxJump(the);
+		mxTypeError(aBuffer.error);	
 	}
 	mxPop();
 	c_free(aBuffer.symbolMap);
@@ -984,11 +987,10 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 
 void fxMeasureThrow(txMachine* the, txMarshallBuffer* theBuffer, txString message)
 {
-	char buffer[128] = "";
 	txSlot* slot = theBuffer->stack;
 	txInteger i = 0;
-	txInteger c = sizeof(buffer);
-	i += c_snprintf(buffer, c, "marshall ");
+	txInteger c = sizeof(theBuffer->error);
+	i += c_snprintf(theBuffer->error, c, "marshall ");
 	while (slot > the->stack) {
 		slot--;
 		if (slot->kind == XS_AT_KIND) {
@@ -996,19 +998,19 @@ void fxMeasureThrow(txMachine* the, txMarshallBuffer* theBuffer, txString messag
 				txBoolean adorn;
 				txString string = fxGetKeyString(the, slot->value.at.id, &adorn);
 				if (adorn) {
-					if (i < c) i += c_snprintf(buffer + i, c - i, "[%s]", string);
+					if (i < c) i += c_snprintf(theBuffer->error + i, c - i, "[%s]", string);
 				}
 				else {
-					if (i < c) i += c_snprintf(buffer + i, c - i, ".%s", string);
+					if (i < c) i += c_snprintf(theBuffer->error + i, c - i, ".%s", string);
 				}
 			}
 			else {
-				if (i < c) i += c_snprintf(buffer + i, c - i, "[%d]", (int)slot->value.at.index);
+				if (i < c) i += c_snprintf(theBuffer->error + i, c - i, "[%d]", (int)slot->value.at.index);
 			}
 		}
 	}
 	if (i < c)
-		i += c_snprintf(buffer + i, c - i, ": %s", message);
-	mxTypeError(buffer);
+		i += c_snprintf(theBuffer->error + i, c - i, ": %s", message);
+	c_longjmp(theBuffer->jmp_buf, 1);
 }
 
