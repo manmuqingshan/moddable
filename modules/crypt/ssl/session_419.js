@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2022  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -241,28 +241,20 @@ class SSLSession {
 	}
 	readPacket(s) {
 		let packetBuffer = this.packetBuffer;
-		if (!packetBuffer || (packetBuffer.length < 5)) {
+		if (!packetBuffer || (packetBuffer.offset < 5)) {
 			if (!packetBuffer) {
-				let need = Math.min(5, s.readable);
-				this.packetBuffer = new Uint8Array(s.read(need));
-				s.readable -= need;
+				packetBuffer = this.packetBuffer = new Uint8Array(new ArrayBuffer(5, {maxByteLength: 32768}));
+				packetBuffer.offset = 0;
 			}
-			else {
-				let need = Math.min(5 - packetBuffer.length, s.readable);
-				let c = new Uint8Array(s.read(need));
-				s.readable -= need;
-				this.packetBuffer = new Uint8Array(packetBuffer.length + c.length);
-				this.packetBuffer.set(packetBuffer);
-				this.packetBuffer.set(c, packetBuffer.length);
-			}
-			packetBuffer = this.packetBuffer;
-			if (packetBuffer.length < 5)
+
+			const need = Math.min(5 - packetBuffer.offset, s.readable);
+			s.read(this.packetBuffer.subarray(packetBuffer.offset, packetBuffer.offset + need));
+			s.readable -= need;
+			packetBuffer.offset += need;
+			if (packetBuffer.offset < 5)
 				return;
 
-			this.packetBuffer = new Uint8Array(((packetBuffer[3] << 8) | packetBuffer[4]) + 5);		/* packet length including 5 byte header */
-			this.packetBuffer.set(packetBuffer);
-			packetBuffer = this.packetBuffer;
-			packetBuffer.offset = 5;
+			this.packetBuffer.buffer.resize(((packetBuffer[3] << 8) | packetBuffer[4]) + 5);		/* packet length including 5 byte header */
 		}
 		let need = packetBuffer.length - packetBuffer.offset;
 		if (need) {
@@ -276,7 +268,7 @@ class SSLSession {
 			if (packetBuffer.offset < packetBuffer.length)
 				return;
 		}
-		this.packetBuffer = null;
+		delete this.packetBuffer;
 		return packetBuffer.buffer;
 	}
 	putData(data) {
