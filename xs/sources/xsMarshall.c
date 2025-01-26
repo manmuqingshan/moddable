@@ -461,7 +461,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		aBuffer.symbolSize = sizeof(txSize) + sizeof(txID);
 		aBuffer.symbolMap = c_calloc(mapSize, sizeof(txID));
 		if (mapSize && !aBuffer.symbolMap)
-			mxUnknownError("out of memory");
+			fxMeasureThrow(the,  &aBuffer, "out of memory");
         the->stack->ID = XS_NO_ID;
         aBuffer.stack = the->stack;
 		fxMeasureSlot(the, the->stack, &aBuffer, alien);
@@ -470,7 +470,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 		mxMarshallAlign(aBuffer.size, aBuffer.symbolSize);
 		aBuffer.base = aBuffer.current = (txByte *)c_malloc(aBuffer.size);
 		if (!aBuffer.base)
-			mxUnknownError("out of memory");
+			fxMeasureThrow(the,  &aBuffer, "out of memory");
 		*((txSize*)(aBuffer.current)) = aBuffer.size;
 		aBuffer.current += sizeof(txSize);
 		*((txID*)(aBuffer.current)) = aBuffer.symbolCount;
@@ -548,7 +548,7 @@ void* fxMarshall(txMachine* the, txBoolean alien)
 			c_free(aBuffer.base);
 		if (aBuffer.symbolMap)
 			c_free(aBuffer.symbolMap);
-		mxTypeError(aBuffer.error);	
+		mxUnknownError(aBuffer.error);	
 	}
 	mxPop();
 	c_free(aBuffer.symbolMap);
@@ -768,6 +768,8 @@ void fxMeasureChunk(txMachine* the, void* theData, txMarshallBuffer* theBuffer)
 	txChunk* aChunk = ((txChunk*)(((txByte*)theData) - sizeof(txChunk)));
 	txSize aSize = aChunk->size & 0x7FFFFFFF;
 	theBuffer->size += aSize;
+	if (theBuffer->size < 0)
+		fxMeasureThrow(the, theBuffer, "too big");
 	mxMarshallAlign(theBuffer->size, aSize);
 }
 
@@ -820,6 +822,8 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 	if (!(theSlot->flag & XS_INTERNAL_FLAG) && !fxMeasureKey(the, theSlot->ID, theBuffer, alien))
 		return;
 	theBuffer->size += sizeof(txSlot);
+	if (theBuffer->size < 0)
+		fxMeasureThrow(the, theBuffer, "too big");
 	switch (theSlot->kind) {
 	case XS_UNDEFINED_KIND:
 	case XS_NULL_KIND:
@@ -894,6 +898,8 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 			current = *((txIndex*)slot);
 			while (former < current) {
 				theBuffer->size += sizeof(txSlot);
+				if (theBuffer->size < 0)
+					fxMeasureThrow(the, theBuffer, "too big");
 				former++;
 			}
 			mxPushAt(XS_NO_ID, *((txIndex*)slot));
@@ -904,6 +910,8 @@ void fxMeasureSlot(txMachine* the, txSlot* theSlot, txMarshallBuffer* theBuffer,
 		}
 		while (former < length) {
 			theBuffer->size += sizeof(txSlot);
+			if (theBuffer->size < 0)
+				fxMeasureThrow(the, theBuffer, "too big");
 			former++;
 		}
 		} break;
