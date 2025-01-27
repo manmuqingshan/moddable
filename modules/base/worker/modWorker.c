@@ -387,7 +387,6 @@ void workerDeliverMarshall(xsMachine *the, modWorker worker, uint8_t *message, u
 
 	xsBeginHost(the);
 
-	xsCollectGarbage();
 	xsResult = xsDemarshall(*(char **)message);
 	c_free(*(char **)message);
 

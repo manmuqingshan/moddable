@@ -78,7 +78,6 @@ static void fxMeasureThrow(txMachine* the, txMarshallBuffer* theBuffer, txString
 
 void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 {
-	txFlag aFlag;
 	txByte* p;
 	txByte* q;
 	txID aSymbolCount;
@@ -87,7 +86,6 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 	txID* aSymbolPointer;
 	txSlot* aSlot;
 	txChunk* aChunk;
-	txInteger skipped;
 	txIndex aLength;
 	
 	if (!theData) {
@@ -96,8 +94,6 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 	}
 	p = (txByte*)theData;
 	q = p + *((txSize*)(p));
-	aFlag = (txFlag)the->collectFlag;
-	the->collectFlag &= ~(XS_COLLECTING_FLAG | XS_SKIPPED_COLLECT_FLAG);
 	{
 		mxTry(the) {
 			p += sizeof(txSize);
@@ -159,10 +155,6 @@ void fxDemarshall(txMachine* the, void* theData, txBoolean alien)
 			}
 		}
 	}
-	skipped = the->collectFlag & XS_SKIPPED_COLLECT_FLAG;
-	the->collectFlag = aFlag;
-	if (skipped)
-		fxCollectGarbage(the);
 }
 
 void fxDemarshallChunk(txMachine* the, void* theData, void** theDataAddress)
