@@ -17,6 +17,7 @@
  *   along with the Moddable SDK Runtime.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 #include "xsmc.h"
 #include "mc.xs.h"
 #include "mc.defines.h"
@@ -85,17 +86,14 @@ struct CameraRecord {
 	xsSlot		object;
 	xsSlot		*onReadable;
 
-	uint8_t		calling;
-	uint8_t		running;
-
 	uint32_t	width;
 	uint32_t	height;
 
 	SemaphoreHandle_t	mutex;
 	TaskHandle_t		task;
-	uint8_t		state;
+	uint8_t				state;
+	uint8_t				calling;
 
-	uint8_t		frameSize;
 	uint8_t		swap16;
 	uint8_t		format;
 	uint8_t		isJPEG;
@@ -122,11 +120,13 @@ typedef struct FramesizeRecord *Framesize;
 // ordered by width, then by height
 static FramesizeRecord FrameSizes[] = {
     FRAMESIZE_96X96,   96, 96,
+    FRAMESIZE_128X128, 128, 128,
     FRAMESIZE_QQVGA,   160, 120,
     FRAMESIZE_QCIF,    176, 144,
     FRAMESIZE_HQVGA,   240, 176,
     FRAMESIZE_240X240, 240, 240,
     FRAMESIZE_QVGA,    320, 240,
+    FRAMESIZE_320X320, 320, 320,
     FRAMESIZE_CIF,     400, 296,
     FRAMESIZE_HVGA,    480, 320,
     FRAMESIZE_VGA,     640, 480,
@@ -180,6 +180,7 @@ static camera_config_t camera_config = {
 };
 
 enum {
+	kStateInitializing,
 	kStateIdle,
 	kStateRunning,
 	kStateStopping,
@@ -196,22 +197,28 @@ static void deliverCallbacks(void *the, void *refcon, uint8_t *message, uint16_t
 		return;
 	}
 
+	if (kStateRunning != camera->state)
+		return;
+
 	xsBeginHost(the);
 		xsCallFunction1(xsReference(camera->onReadable), camera->object, xsInteger(0));
 	xsEndHost(the);
 	camera->calling = 0;
-//	xTaskNotify(camera->task, kStateRunning, eSetValueWithOverwrite);
 }
 
 static void cameraLoop(void *pvParameter)
 {
 	Camera camera = pvParameter;
+	uint8_t running = 0;
 
 	// free up i2c control port	//@@
 	i2c_driver_delete(camera_config.sccb_i2c_port);
 
 	camera->initErr = esp_camera_init(&camera_config);
-	if (ESP_OK != camera->initErr) goto bail;
+	if (ESP_OK != camera->initErr) {
+		xSemaphoreTake(camera->mutex, portMAX_DELAY);
+		goto bail;
+	}
 
 	while (true) {
 		if (kStateClosing == camera->state) {
@@ -220,14 +227,20 @@ static void cameraLoop(void *pvParameter)
 		}
 
 		if (kStateStopping == camera->state) {
-			camera->running = 0;
+			running = 0;
 			camera->state = kStateIdle;
 		}
 
-		if (camera->running) {
+		if (running || (kStateInitializing == camera->state)) {
 			camera_fb_t *fb = esp_camera_fb_get();
 			CameraFrame frame = NULL;
 			int i;
+
+			if (!camera->width) {
+				camera->state = kStateIdle;	// was kStateInitializing
+				camera->width = fb->width;
+				camera->height = fb->height;
+			}
 
 			xSemaphoreTake(camera->mutex, portMAX_DELAY);
 
@@ -280,18 +293,17 @@ static void cameraLoop(void *pvParameter)
 			}
 		}
 
-		if (kStateIdle == camera->state || !camera->running) {
+		if (kStateIdle == camera->state || !running) {
 			uint32_t newState;
 			xTaskNotifyWait(0, 0, &newState, portMAX_DELAY);
 
 			if (kStateRunning == newState)
-				camera->running = 1;
+				running = 1;
 			camera->state = newState;
 		}
 	}
 
 bail:
-	camera->running = 0;
 	esp_camera_deinit();
 
 	camera->task = NULL;
@@ -326,9 +338,9 @@ static int sizeToFrameSize(int width, int height)
 			continue;
 		if (FrameSizes[i].height < height) {
 			if ((FRAMESIZE_INVALID != FrameSizes[i + 1].id) && (FrameSizes[i+1].width == FrameSizes[i].width))
-				return FrameSizes[i+1].id;
+				return i + 1;
 		}
-		return FrameSizes[i].id;
+		return i;
 	}
 	return -1;
 }
@@ -384,16 +396,13 @@ void xs_camera_constructor(xsMachine *the)
 
 	xsmcGet(xsVar(0), xsArg(0), xsID_prototype);
 	camera->hostBufferPrototype = xsmcToReference(xsVar(0));
+	int frameSizeIndex = sizeToFrameSize(width, height);
+	if (-1 == frameSizeIndex)
+		xsUnknownError("unsupported dimensions");
 
-	int frameSize = sizeToFrameSize(width, height);
-	width = FrameSizes[frameSize].width;
-	height = FrameSizes[frameSize].height;
-	if (-1 != frameSize)
-		camera_config.frame_size = frameSize;
+	camera_config.frame_size = FrameSizes[frameSizeIndex].id;
 
-	camera->width = width;
-	camera->height = height;
-	camera->state = kStateIdle;
+	camera->state = kStateInitializing;
 	camera->mutex = xSemaphoreCreateMutex();
 
 	if (isJPEG)
@@ -407,10 +416,9 @@ void xs_camera_constructor(xsMachine *the)
 	camera->swap16 = (imageType == kCommodettoBitmapRGB565LE);
 	camera->isJPEG = isJPEG;
 
-	camera->initErr = ESP_ERR_INVALID_MAC;		// error that the camera won't generate
 	xTaskCreate(cameraLoop, "camera", 8 * 1024 + XT_STACK_EXTRA_CLIB, camera, 10, &camera->task);
 	
-	while (ESP_ERR_INVALID_MAC == camera->initErr)
+	while (kStateInitializing == camera->state)
 		vTaskDelay(1);
 
 	if (camera->initErr)
