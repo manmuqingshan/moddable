@@ -62,11 +62,10 @@ export class MakeFile extends FILE {
 	}
 	generate(tool) {
 		this.generateDefinitions(tool)
-		if (tool.environment)				// override default .mk file
-			if (tool.environment.MAKE_FRAGMENT)
-				tool.fragmentPath = tool.environment.MAKE_FRAGMENT;
+		if (tool.environment?.MAKE_FRAGMENT)				// override default .mk file
+			tool.fragmentPath = tool.environment.MAKE_FRAGMENT;
 		if (undefined === tool.fragmentPath)
-			throw new Error("unknown platform: MAKE_FRAGMENT not found!");
+			throw new Error(`MAKE_FRAGMENT not found: unknown platform "${tool.platform}"!`);
 
 		for (var result of tool.pioFiles) {
 			var source = result.source;
