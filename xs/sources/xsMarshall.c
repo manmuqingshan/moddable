@@ -234,15 +234,13 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 		theResult->kind = theSlot->kind;
 		break;
 	case XS_REGEXP_KIND:
+		theResult->value.regexp.code = C_NULL;
+		theResult->value.regexp.data = C_NULL;
+		theResult->kind = theSlot->kind;
 		if (theSlot->value.regexp.code)
 			fxDemarshallChunk(the, theSlot->value.regexp.code, (void**)&(theResult->value.regexp.code));
-		else
-			theResult->value.regexp.code = C_NULL;
 		if (theSlot->value.regexp.data)
 			fxDemarshallChunk(the, theSlot->value.regexp.data, (void**)&(theResult->value.regexp.data));
-		else
-			theResult->value.regexp.data = C_NULL;
-		theResult->kind = theSlot->kind;
 		break;	
 	case XS_KEY_KIND:
 		if (theSlot->value.key.string)
@@ -388,10 +386,10 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 					*((txIndex*)aResult) = index;
 					index++;
 					offset++;
+					theResult->value.array.length = index;
 				}
 				aSlot = aSlot->next;
 			}
-			theResult->value.array.length = index;
 		}
 		break;
 	case XS_ERROR_KIND:
