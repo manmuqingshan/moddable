@@ -1369,7 +1369,7 @@ class ModulesRule extends Rule {
 			return;
 		if (tool.dataFiles.already[source])
 			return;
-		if ((parts.extension == ".js") || (parts.extension == ".mjs") || ((parts.extension == ".json") && (!parts.name.startsWith("manifest"))))
+		else if ((parts.extension == ".js") || (parts.extension == ".mjs"))
 			this.appendFile(tool.jsFiles, target + ".xsb", source, include);
 		else if (parts.extension == ".c")
 			this.appendFile(tool.cFiles, parts.name + ".c.o", source, include);
@@ -1400,8 +1400,12 @@ class ModulesRule extends Rule {
 		else if (parts.extension == ".d.ts")
 			this.appendFile(tool.dtsFiles, target, source, include);
 		else if (parts.extension == ".json") {
-			if ("nodered2mcu" === query.transform)
+			if (parts.name.startsWith("manifest"))
+				;
+			else if ("nodered2mcu" === query.transform)
 				this.appendFile(tool.nodered2mcuFiles, target, source, include);
+			else
+				this.appendFile(tool.jsFiles, target + ".xsb", source, include);
 		}
 		else if (parts.extension == ".pio")
 			this.appendFile(tool.pioFiles, target, source, include);
