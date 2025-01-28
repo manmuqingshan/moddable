@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023  Moddable Tech, Inc.
+ * Copyright (c) 2021-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK.
  * 
@@ -47,7 +47,6 @@ class TLSSocket {
 			serverName: options.host,		// serverName for SNI. This defaults it to host. Caller can override with options.secure.serverName
 			...options.secure,
 			protocolVersion: 0x303,
-			trace: false
 		});
 		this.#session.initiateHandshake();
 
@@ -122,7 +121,9 @@ class TLSSocket {
 		return this.#session.write(this.#socket, buffer, options);
 	}
 	set format(format) {
-		this.#format = format === "buffer";
+		if (("buffer" != format) && ("number" != format))
+			throw new RangeError;
+		this.#format = format == "buffer";
 	}
 	get format() {
 		return this.#format ? "buffer" : "number";
