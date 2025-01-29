@@ -393,23 +393,20 @@ void fxDemarshallSlot(txMachine* the, txSlot* theSlot, txSlot* theResult, txID* 
 		}
 		break;
 	case XS_ERROR_KIND:
+		theResult->value.error.info = C_NULL;
+		theResult->value.error.which = theSlot->value.error.which;
 		theResult->kind = theSlot->kind;
 		if (theSlot->value.error.info)
 			fxDemarshallReference(the, theSlot->value.error.info, &theResult->value.error.info, theSymbolMap, alien);
-		else
-			theResult->value.error.info = C_NULL;
-		theResult->value.error.which = theSlot->value.error.which;
 		break;
 	case XS_PROXY_KIND:
+		theResult->value.proxy.handler = C_NULL;
+		theResult->value.proxy.target = C_NULL;
 		theResult->kind = theSlot->kind;
 		if (theSlot->value.proxy.handler)
 			fxDemarshallReference(the, theSlot->value.proxy.handler, &theResult->value.proxy.handler, theSymbolMap, alien);
-		else
-			theResult->value.proxy.handler = C_NULL;
 		if (theSlot->value.proxy.target)
 			fxDemarshallReference(the, theSlot->value.proxy.target, &theResult->value.proxy.target, theSymbolMap, alien);
-		else
-			theResult->value.proxy.target = C_NULL;
 		break;	
 
 	case XS_LIST_KIND:
