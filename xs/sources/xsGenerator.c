@@ -377,12 +377,25 @@ void fxSetterThatIgnoresPrototypeProperties(txMachine* the, txSlot* reference, t
 		if (!mxBehaviorDefineOwnProperty(the, instance, id, 0, value, XS_NO_FLAG))
 			mxTypeError("set %s: not extensible", name);
 	}
-	else {
+	else if (!mxIsProxy(instance)) {
 		property = mxBehaviorSetProperty(the, instance, id, 0, XS_OWN);
 		if (!property)
 			mxTypeError("set %s: not writable", name);
-		property->kind = value->kind;
-		property->value = value->value;
+        if (property->kind == XS_ACCESSOR_KIND) {
+            txSlot* function = property->value.accessor.setter;
+            if (!mxIsFunction(function))
+                mxTypeError("set %s: not writable", name);
+            mxPushSlot(reference);
+            mxPushReference(function);
+            mxCall();
+            mxPushSlot(value);
+            mxRunCount(1);
+            mxPop();
+       }
+        else {
+            property->kind = value->kind;
+            property->value = value->value;
+        }
 	}
 	mxPop();
 }
