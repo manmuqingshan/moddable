@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2024  Moddable Tech, Inc.
+ * Copyright (c) 2016-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -133,7 +133,7 @@ export class Bytes extends ArrayBuffer {
 		let byteLength;
 		if ("string" === typeof bytes)
 			byteLength = bytes.length >> 1;
-		else if (("object" === typeof bytes) && (bytes instanceof ArrayBuffer))
+		else if (bytes instanceof ArrayBuffer)
 			byteLength = bytes.byteLength;
 		else
 			throw new Error("unsupported type");
