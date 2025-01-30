@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024  Moddable Tech, Inc.
+ * Copyright (c) 2024-2025  Moddable Tech, Inc.
  *
  *   This file is part of the Moddable SDK Runtime.
  * 
@@ -351,6 +351,8 @@ void xs_direectoryposix_delete(xsMachine *the)
 void xs_direectoryposix_move(xsMachine *the)
 {
 	int fd = getDirectory(xsThis), toFD = fd;
+	xsmcToString(xsArg(0));		// coerce both before getPath to avoid problem if memory moves
+	xsmcToString(xsArg(1));
 	char *fromPath = getPath(xsArg(0));
 	char *toPath = getPath(xsArg(1));
 
@@ -406,6 +408,8 @@ void xs_direectoryposix_createDirectory(xsMachine *the)
 void xs_direectoryposix_createLink(xsMachine *the)
 {
 	int fd = getDirectory(xsThis);
+	xsmcToString(xsArg(0));		// coerce both before getPath to avoid problem if memory moves
+	xsmcToString(xsArg(1));
 	char *path = getPath(xsArg(0));
 	char *target = getPath(xsArg(1));
 
